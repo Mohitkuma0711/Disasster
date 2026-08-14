@@ -3,11 +3,11 @@ import MapView from './components/MapView';
 import PriorityQueue from './components/PriorityQueue';
 import ReportForm from './components/ReportForm';
 import AnalyticsCharts from './components/AnalyticsCharts';
-import { Shield, Radio, Activity, RefreshCw, AlertOctagon, Cpu, Database } from 'lucide-react';
+import ClimateRiskModule from './components/ClimateRiskModule';
+import { Shield, Radio, Cpu, Database, MapPin, Globe as GlobeIcon, BarChart2 } from 'lucide-react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 
-// Initial realistic demo dataset for evidence board presentation
 const INITIAL_DEMO_VICTIMS = [
   {
     id: 'V-1001',
@@ -74,8 +74,7 @@ const INITIAL_DEMO_VICTIMS = [
 export default function App() {
   const [victims, setVictims] = useState(INITIAL_DEMO_VICTIMS);
   const [selectedVictim, setSelectedVictim] = useState(null);
-  const [activeTab, setActiveTab] = useState('board');
-  const [wsConnected, setWsConnected] = useState(true);
+  const [currentModule, setCurrentModule] = useState('victim-triage'); // 'victim-triage' or 'climate-risk'
 
   // Firestore real-time listener
   useEffect(() => {
@@ -99,7 +98,6 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Handle new report submission
   const handleReportSubmitted = (newVictim) => {
     setVictims(prev => [newVictim, ...prev]);
   };
@@ -118,40 +116,43 @@ export default function App() {
             <div>
               <div className="flex items-center space-x-2">
                 <h1 className="text-xl font-bold font-typewriter tracking-wider text-amber-300 uppercase">
-                  DISASTER VICTIM DETECTION
+                  DISASTER VICTIM DETECTION & CLIMATE INTELLIGENCE
                 </h1>
                 <span className="px-2 py-0.5 text-[10px] font-bold bg-red-950 text-red-400 border border-red-800/80 rounded uppercase">
-                  CLASSIFIED // EVIDENTIAL
+                  SIH // EVIDENTIAL COMMAND
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Incident Command Center & Automated Triage Intelligence System
+                Incident Command Center, Automated Victim Triage & 3D Climate Risk Intelligence
               </p>
             </div>
           </div>
 
-          {/* Live System Status Badges */}
-          <div className="flex items-center space-x-4 text-xs">
-            {/* Live Feed Status */}
-            <div className="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded border border-slate-800">
-              <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
-              <span className="text-slate-300">WEBSOCKET:</span>
-              <span className="text-emerald-400 font-bold">ONLINE</span>
-            </div>
+          {/* Module Navigation Tabs */}
+          <div className="flex items-center space-x-2 bg-slate-900/90 p-1.5 rounded-lg border border-slate-800">
+            <button
+              onClick={() => setCurrentModule('victim-triage')}
+              className={`px-3.5 py-1.5 rounded text-xs font-mono font-bold transition flex items-center space-x-2 ${
+                currentModule === 'victim-triage'
+                  ? 'bg-amber-900/60 text-amber-200 border border-amber-600/60 shadow-lg'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <MapPin className="w-4 h-4 text-amber-400" />
+              <span>VICTIM TRIAGE MAP</span>
+            </button>
 
-            {/* YOLOv8 + ByteTrack Status */}
-            <div className="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded border border-slate-800">
-              <Cpu className="w-4 h-4 text-amber-400" />
-              <span className="text-slate-300">YOLOv8 + ByteTrack:</span>
-              <span className="text-amber-400 font-bold">ACTIVE</span>
-            </div>
-
-            {/* Database Status */}
-            <div className="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded border border-slate-800">
-              <Database className="w-4 h-4 text-cyan-400" />
-              <span className="text-slate-300">FIRESTORE:</span>
-              <span className="text-cyan-400 font-bold">SYNCED</span>
-            </div>
+            <button
+              onClick={() => setCurrentModule('climate-risk')}
+              className={`px-3.5 py-1.5 rounded text-xs font-mono font-bold transition flex items-center space-x-2 ${
+                currentModule === 'climate-risk'
+                  ? 'bg-amber-900/60 text-amber-200 border border-amber-600/60 shadow-lg'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <GlobeIcon className="w-4 h-4 text-cyan-400" />
+              <span>CLIMATE RISK GLOBE</span>
+            </button>
           </div>
         </div>
       </header>
@@ -159,21 +160,31 @@ export default function App() {
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 mt-6 space-y-6">
         
-        {/* Top Row: Map & Report Form */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <MapView victims={victims} onSelectVictim={setSelectedVictim} />
-          </div>
-          <div>
-            <ReportForm onReportSubmitted={handleReportSubmitted} />
-          </div>
-        </div>
+        {/* Module 1: Victim Triage & Detection */}
+        {currentModule === 'victim-triage' && (
+          <>
+            {/* Top Row: Map & Report Form */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <MapView victims={victims} onSelectVictim={setSelectedVictim} />
+              </div>
+              <div>
+                <ReportForm onReportSubmitted={handleReportSubmitted} />
+              </div>
+            </div>
 
-        {/* Analytics Charts */}
-        <AnalyticsCharts victims={victims} />
+            {/* Analytics Charts */}
+            <AnalyticsCharts victims={victims} />
 
-        {/* Priority Queue Log Table */}
-        <PriorityQueue victims={victims} onVictimSelect={setSelectedVictim} />
+            {/* Priority Queue Log Table */}
+            <PriorityQueue victims={victims} onVictimSelect={setSelectedVictim} />
+          </>
+        )}
+
+        {/* Module 2: Climate Risk Intelligence 3D Globe */}
+        {currentModule === 'climate-risk' && (
+          <ClimateRiskModule />
+        )}
       </main>
     </div>
   );
