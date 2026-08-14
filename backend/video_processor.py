@@ -6,6 +6,11 @@ import uuid
 import base64
 import numpy as np
 from typing import List, Dict, Tuple, Optional
+from dotenv import load_dotenv
+
+# Auto-load environment variables from .env file
+load_dotenv()
+
 from detection import PersonDetector
 from tracking_state import InactivityTracker
 
@@ -35,13 +40,13 @@ class VideoThreatProcessor:
 
         # Initialize OpenAI client if API key is present
         self.api_key = os.getenv("OPENAI_API_KEY")
-        if HAS_OPENAI_LIB and self.api_key:
+        if HAS_OPENAI_LIB and self.api_key and not self.api_key.startswith("sk-proj-your_actual"):
             self.openai_client = OpenAI(api_key=self.api_key)
             print("[+] OpenAI Client initialized with GPT-4o mini Vision verification.")
         else:
             self.openai_client = None
-            if not self.api_key:
-                print("[!] OPENAI_API_KEY not set. Using vision-heuristic fallback for Stage 2.")
+            if not self.api_key or self.api_key.startswith("sk-proj-your_actual"):
+                print("[!] OPENAI_API_KEY not configured in backend/.env. Using vision-heuristic fallback for Stage 2.")
 
     def process_video_file(
         self,
@@ -287,7 +292,7 @@ class VideoThreatProcessor:
                 "Submerging in Water": "Water color frequency mask overlap detected on lower body region."
             }
             reason = reasoning_map.get(threat_type, f"Confirmed candidate for {threat_type}.")
-            return True, f"[VERIFIED BY VISION-HEURISTIC] {reason} (Set OPENAI_API_KEY for live GPT-4o mini)"
+            return True, f"[VERIFIED BY VISION-HEURISTIC] {reason} (Set OPENAI_API_KEY in backend/.env for live GPT-4o mini)"
         else:
             return False, f"[REJECTED] Candidate confidence too low ({conf:.2f})."
 
