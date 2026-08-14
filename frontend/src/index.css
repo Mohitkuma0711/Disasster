@@ -1,1 +1,55 @@
 @import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Courier Prime', monospace;
+    background-color: #0b0f17;
+    background-image: 
+      radial-gradient(#1e293b 1px, transparent 1px),
+      linear-gradient(to right, rgba(30, 41, 59, 0.15) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(30, 41, 59, 0.15) 1px, transparent 1px);
+    background-size: 24px 24px, 48px 48px, 48px 48px;
+  }
+
+  h1, h2, h3, .font-typewriter {
+    font-family: 'Special Elite', cursive, monospace;
+  }
+
+  .font-mono-tech {
+    font-family: 'Share Tech Mono', monospace;
+  }
+}
+
+/* Custom leaflet marker popup styling for dark theme */
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #0f172a !important;
+  color: #fef3c7 !important;
+  border: 1px solid #78350f !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.8) !important;
+}
+
+.leaflet-popup-content {
+  font-family: 'Courier Prime', monospace !important;
+  margin: 12px 14px !important;
+}
+
+.leaflet-container {
+  background-color: #090d16 !important;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #090d16;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #d97706;
+}
