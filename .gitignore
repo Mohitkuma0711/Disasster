@@ -25,6 +25,12 @@ venv/
 ENV/
 .env
 
+# ML Model Weights
+*.pt
+*.onnx
+*.engine
+*.bin
+
 # Node / JS
 node_modules/
 npm-debug.log*
