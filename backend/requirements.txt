@@ -4,3 +4,5 @@ python-multipart
 websockets
 opencv-python
 ultralytics
+scikit-learn
+numpy
