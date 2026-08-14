@@ -9,7 +9,6 @@ export default function VideoThreatAnalysis() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [activeThreatFilter, setActiveThreatFilter] = useState('all');
-  const [polling, setPolling] = useState(false);
 
   const videoPlayerRef = useRef(null);
 
@@ -137,11 +136,11 @@ export default function VideoThreatAnalysis() {
           <div className="flex items-center space-x-2">
             <Film className="w-5 h-5 text-amber-500" />
             <h2 className="text-xl font-bold font-typewriter text-amber-300 uppercase tracking-wide">
-              Automated Video Threat Analysis & GPT-4o Mini Verification Engine
+              Automated Video Threat Analysis & Gemini 2.0 Flash Verification
             </h2>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Stage 1 Candidate Detection (YOLOv8 + ByteTrack) &rarr; Stage 2 GPT-4o mini Vision Verification.
+            Stage 1 Candidate Detection (YOLOv8 + ByteTrack) &rarr; Stage 2 Gemini 2.0 Flash Vision Verification.
           </p>
         </div>
 
@@ -152,7 +151,7 @@ export default function VideoThreatAnalysis() {
           <span className="text-slate-500">&rarr;</span>
           <span className="px-3 py-1 bg-emerald-950 text-emerald-300 border border-emerald-800 rounded font-bold flex items-center space-x-1">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>STAGE 2: GPT-4o MINI VERIFIED</span>
+            <span>STAGE 2: GEMINI 2.0 FLASH VERIFIED</span>
           </span>
         </div>
       </div>
@@ -188,7 +187,7 @@ export default function VideoThreatAnalysis() {
           {uploading && (
             <div className="space-y-1">
               <div className="flex justify-between text-xs text-amber-300">
-                <span>Uploading video file and starting async two-stage analysis...</span>
+                <span>Uploading video file and starting async Gemini 2.0 Flash analysis...</span>
                 <span>{uploadProgress}%</span>
               </div>
               <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
@@ -204,7 +203,7 @@ export default function VideoThreatAnalysis() {
               className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold font-typewriter rounded-lg shadow-lg shadow-amber-900/30 transition disabled:opacity-50 text-xs flex items-center space-x-2"
             >
               <Sparkles className="w-4 h-4" />
-              <span>START GPT-4o MINI THREAT ANALYSIS</span>
+              <span>START GEMINI 2.0 FLASH THREAT ANALYSIS</span>
             </button>
           </div>
         </form>
@@ -232,7 +231,7 @@ export default function VideoThreatAnalysis() {
             <FileVideo className="w-10 h-10 text-slate-600 mx-auto" />
             <div className="font-typewriter text-amber-300 font-bold">No uploaded videos yet</div>
             <p className="text-xs text-slate-500 max-w-md mx-auto">
-              Upload an MP4/MOV/AVI video file using the panel above to start candidate detection and GPT-4o mini vision verification.
+              Upload an MP4/MOV/AVI video file using the panel above to start candidate detection and Gemini 2.0 Flash vision verification.
             </p>
           </div>
         ) : (
@@ -346,7 +345,7 @@ export default function VideoThreatAnalysis() {
               <div className="flex items-center space-x-2">
                 <ShieldCheck className="w-5 h-5 text-emerald-400" />
                 <h4 className="text-md font-bold font-typewriter text-amber-300 uppercase">
-                  GPT-4o Mini Verified Threat Screenshots ({filteredThreats.length})
+                  Gemini 2.0 Flash Verified Threat Screenshots ({filteredThreats.length})
                 </h4>
               </div>
 
@@ -371,6 +370,7 @@ export default function VideoThreatAnalysis() {
               {filteredThreats.map((t) => {
                 const isSubmerging = t.threat_type.includes('Submerging') || t.threat_type.includes('Trapped');
                 const screenshotSrc = t.screenshot_url.startsWith('http') ? t.screenshot_url : `http://localhost:8000${t.screenshot_url}`;
+                const reasoning = t.gemini_reasoning || t.gpt4o_mini_reasoning || t.llm_reasoning;
 
                 return (
                   <div
@@ -401,9 +401,9 @@ export default function VideoThreatAnalysis() {
                     <div className="text-xs font-mono text-slate-300 bg-slate-950/80 p-2.5 rounded border border-slate-800 space-y-1">
                       <div className="text-emerald-400 font-bold flex items-center space-x-1">
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>GPT-4o Mini Explanation (YOLO Conf: {Math.round((t.yolo_confidence || 0.90) * 100)}%)</span>
+                        <span>Gemini 2.0 Flash Explanation (YOLO Conf: {Math.round((t.yolo_confidence || 0.90) * 100)}%)</span>
                       </div>
-                      <p className="italic text-slate-300 text-[11px]">{t.gpt4o_mini_reasoning}</p>
+                      <p className="italic text-slate-300 text-[11px]">{reasoning}</p>
                     </div>
 
                     {/* Action Buttons */}

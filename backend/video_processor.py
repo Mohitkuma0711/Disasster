@@ -1,11 +1,14 @@
 import os
+import re
 import cv2
 import time
 import math
 import uuid
+import json
 import base64
 import numpy as np
 from typing import List, Dict, Tuple, Optional
+from PIL import Image
 from dotenv import load_dotenv
 
 # Auto-load environment variables from .env file
@@ -14,19 +17,19 @@ load_dotenv()
 from detection import PersonDetector
 from tracking_state import InactivityTracker
 
-# Try importing OpenAI library for GPT-4o mini Stage 2 vision verification
+# Try importing Google Generative AI SDK for Gemini vision verification
 try:
-    from openai import OpenAI
-    HAS_OPENAI_LIB = True
+    import google.generativeai as genai
+    HAS_GEMINI_LIB = True
 except ImportError:
-    HAS_OPENAI_LIB = False
+    HAS_GEMINI_LIB = False
 
 
 class VideoThreatProcessor:
     """Two-Stage Video Threat Analysis Pipeline:
 
     Stage 1: Candidate Detection (YOLOv8 + ByteTrack + Life-Threat Heuristics)
-    Stage 2: GPT-4o mini Vision Verification (OpenAI API double-check)
+    Stage 2: Gemini 2.0 Flash Vision Verification (Google Generative AI API double-check)
     """
 
     def __init__(self, model_name: str = "yolov8n.pt", sample_fps: float = 2.0):
@@ -38,15 +41,20 @@ class VideoThreatProcessor:
         self.inactivity_tracker = InactivityTracker(history_length=30, min_frames=10)
         self.sample_fps = sample_fps
 
-        # Initialize OpenAI client if API key is present
-        self.api_key = os.getenv("OPENAI_API_KEY")
-        if HAS_OPENAI_LIB and self.api_key and not self.api_key.startswith("sk-proj-your_actual"):
-            self.openai_client = OpenAI(api_key=self.api_key)
-            print("[+] OpenAI Client initialized with GPT-4o mini Vision verification.")
+        # Initialize Gemini API if GEMINI_API_KEY is present
+        self.gemini_key = os.getenv("GEMINI_API_KEY")
+        self.gemini_model = None
+
+        if HAS_GEMINI_LIB and self.gemini_key and not self.gemini_key.startswith("AIzaSy_your_actual"):
+            try:
+                genai.configure(api_key=self.gemini_key)
+                self.gemini_model = genai.GenerativeModel("gemini-2.0-flash")
+                print("[+] Gemini Client initialized with 'gemini-2.0-flash' Vision verification.")
+            except Exception as e:
+                print(f"[!] Error configuring Gemini API: {e}")
         else:
-            self.openai_client = None
-            if not self.api_key or self.api_key.startswith("sk-proj-your_actual"):
-                print("[!] OPENAI_API_KEY not configured in backend/.env. Using vision-heuristic fallback for Stage 2.")
+            if not self.gemini_key or self.gemini_key.startswith("AIzaSy_your_actual"):
+                print("[!] GEMINI_API_KEY not configured in backend/.env. Using vision-heuristic fallback for Stage 2.")
 
     def process_video_file(
         self,
@@ -175,7 +183,7 @@ class VideoThreatProcessor:
         candidate_events = self._group_candidate_events(raw_candidate_flags)
         print(f"[+] Stage 1 Complete: {len(candidate_events)} candidate threat events flagged.")
 
-        # ─── Stage 2: GPT-4o mini Vision Verification Layer ──────────────────────
+        # ─── Stage 2: Gemini 2.0 Flash Vision Verification Layer ─────────────────
         verified_threats = []
         rejected_candidates = []
 
@@ -205,8 +213,8 @@ class VideoThreatProcessor:
             screenshot_filepath = os.path.join(output_dir, screenshot_filename)
             cv2.imwrite(screenshot_filepath, annotated_frame)
 
-            # Stage 2 Verification via GPT-4o mini Vision API
-            verified, reasoning = self._verify_with_gpt4o_mini(annotated_frame, threat_type, peak_conf)
+            # Stage 2 Verification via Gemini 2.0 Flash API (with retries & rate-limiting)
+            verified, reasoning = self._verify_with_gemini(annotated_frame, threat_type, peak_conf)
 
             record = {
                 "id": str(uuid.uuid4()),
@@ -214,8 +222,8 @@ class VideoThreatProcessor:
                 "track_id": track_id,
                 "threat_type": threat_type,
                 "yolo_confidence": round(peak_conf, 2),
-                "gpt4o_mini_verified": verified,
-                "gpt4o_mini_reasoning": reasoning,
+                "gemini_verified": verified,
+                "gemini_reasoning": reasoning,
                 "timestamp_sec": round(candidate["start_timestamp"], 1),
                 "timecode": timecode_str,
                 "screenshot_url": f"/uploads/{video_id}/screenshots/{screenshot_filename}",
@@ -230,7 +238,10 @@ class VideoThreatProcessor:
             else:
                 rejected_candidates.append(record)
 
-        print(f"[+] Stage 2 Complete: {len(verified_threats)} Verified Threats (GPT-4o mini), {len(rejected_candidates)} Rejected Candidates.")
+            # Pause briefly between candidate calls to respect free tier RPM limits
+            time.sleep(1.2)
+
+        print(f"[+] Stage 2 Complete: {len(verified_threats)} Verified Threats (Gemini 2.0 Flash), {len(rejected_candidates)} Rejected Candidates.")
 
         return {
             "video_id": video_id,
@@ -242,49 +253,52 @@ class VideoThreatProcessor:
             "rejected_candidates": rejected_candidates
         }
 
-    def _verify_with_gpt4o_mini(self, frame: np.ndarray, threat_type: str, conf: float) -> Tuple[bool, str]:
-        """Send peak-confidence candidate frame to GPT-4o mini Vision API for confirmation/rejection."""
+    def _verify_with_gemini(self, frame: np.ndarray, threat_type: str, conf: float) -> Tuple[bool, str]:
+        """Send peak-confidence candidate frame to Gemini 2.0 Flash API for confirmation/rejection."""
         prompt = (
             f"Does this image show a person in a {threat_type} situation "
             "(trapped under debris / submerging in water / immobile-possibly unconscious)? "
-            "Respond with confirmed or rejected, plus a one-sentence reasoning."
+            "Respond ONLY in JSON: {\"verdict\": \"confirmed\" or \"rejected\", \"reasoning\": \"one sentence explanation\"}"
         )
 
-        if self.openai_client:
-            try:
-                # Convert image to Base64 JPEG
-                _, buffer = cv2.imencode('.jpg', frame)
-                base64_image = base64.b64encode(buffer).decode('utf-8')
+        if self.gemini_model:
+            # Convert BGR frame to PIL Image (RGB)
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            pil_img = Image.fromarray(rgb_frame)
 
-                response = self.openai_client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": [
-                                {"type": "text", "text": prompt},
-                                {
-                                    "type": "image_url",
-                                    "image_url": {
-                                        "url": f"data:image/jpeg;base64,{base64_image}"
-                                    }
-                                }
-                            ]
-                        }
-                    ],
-                    max_tokens=120
-                )
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    response = self.gemini_model.generate_content([prompt, pil_img])
+                    reply_text = response.text.strip()
 
-                reply = response.choices[0].message.content.strip()
-                reply_lower = reply.lower()
+                    # Strip markdown code fences if present (```json ... ```)
+                    cleaned_json_str = re.sub(r"^```(?:json)?\s*|\s*```$", "", reply_text, flags=re.MULTILINE).strip()
 
-                is_confirmed = "confirmed" in reply_lower
-                return is_confirmed, f"[GPT-4o mini] {reply}"
+                    try:
+                        data = json.loads(cleaned_json_str)
+                        verdict = str(data.get("verdict", "")).strip().lower()
+                        reasoning = str(data.get("reasoning", "")).strip()
 
-            except Exception as e:
-                print(f"[!] OpenAI API error during GPT-4o mini verification: {e}")
+                        is_confirmed = verdict == "confirmed"
+                        return is_confirmed, f"[Gemini 2.0 Flash] {reasoning}"
+                    except json.JSONDecodeError:
+                        # Fallback parsing if non-strict JSON returned
+                        is_confirmed = "confirmed" in reply_text.lower()
+                        return is_confirmed, f"[Gemini 2.0 Flash] {reply_text}"
 
-        # Heuristic fallback if OPENAI_API_KEY is not configured
+                except Exception as e:
+                    err_str = str(e)
+                    if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "Quota" in err_str:
+                        # Rate limit retry with exponential backoff
+                        wait_sec = 2.0 * (attempt + 1)
+                        print(f"[!] Gemini Rate Limit hit. Retrying in {wait_sec}s (attempt {attempt+1}/{max_retries})...")
+                        time.sleep(wait_sec)
+                    else:
+                        print(f"[!] Gemini API Error: {e}")
+                        break
+
+        # Heuristic fallback if GEMINI_API_KEY is not set or API call fails
         if conf >= 0.35:
             reasoning_map = {
                 "Immobile / Possible Unconscious": "Motion analysis confirms person in stationary position over consecutive frames.",
@@ -292,7 +306,7 @@ class VideoThreatProcessor:
                 "Submerging in Water": "Water color frequency mask overlap detected on lower body region."
             }
             reason = reasoning_map.get(threat_type, f"Confirmed candidate for {threat_type}.")
-            return True, f"[VERIFIED BY VISION-HEURISTIC] {reason} (Set OPENAI_API_KEY in backend/.env for live GPT-4o mini)"
+            return True, f"[VERIFIED BY VISION-HEURISTIC] {reason} (Set GEMINI_API_KEY in backend/.env for Gemini 2.0 Flash)"
         else:
             return False, f"[REJECTED] Candidate confidence too low ({conf:.2f})."
 
