@@ -4,7 +4,8 @@ import PriorityQueue from './components/PriorityQueue';
 import ReportForm from './components/ReportForm';
 import AnalyticsCharts from './components/AnalyticsCharts';
 import ClimateRiskModule from './components/ClimateRiskModule';
-import { Shield, Radio, Cpu, Database, MapPin, Globe as GlobeIcon, BarChart2 } from 'lucide-react';
+import VideoThreatAnalysis from './components/VideoThreatAnalysis';
+import { Shield, Radio, Cpu, Database, MapPin, Globe as GlobeIcon, Film } from 'lucide-react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -74,7 +75,7 @@ const INITIAL_DEMO_VICTIMS = [
 export default function App() {
   const [victims, setVictims] = useState(INITIAL_DEMO_VICTIMS);
   const [selectedVictim, setSelectedVictim] = useState(null);
-  const [currentModule, setCurrentModule] = useState('victim-triage'); // 'victim-triage' or 'climate-risk'
+  const [currentModule, setCurrentModule] = useState('victim-triage'); // 'victim-triage', 'climate-risk', or 'video-analysis'
 
   // Firestore real-time listener
   useEffect(() => {
@@ -116,14 +117,14 @@ export default function App() {
             <div>
               <div className="flex items-center space-x-2">
                 <h1 className="text-xl font-bold font-typewriter tracking-wider text-amber-300 uppercase">
-                  DISASTER VICTIM DETECTION & CLIMATE INTELLIGENCE
+                  DISASTER VICTIM DETECTION & COMMAND INTELLIGENCE
                 </h1>
                 <span className="px-2 py-0.5 text-[10px] font-bold bg-red-950 text-red-400 border border-red-800/80 rounded uppercase">
                   SIH // EVIDENTIAL COMMAND
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Incident Command Center, Automated Victim Triage & 3D Climate Risk Intelligence
+                Incident Command Center, Automated Victim Triage, 3D Climate Risk & Video Threat Analysis
               </p>
             </div>
           </div>
@@ -140,6 +141,18 @@ export default function App() {
             >
               <MapPin className="w-4 h-4 text-amber-400" />
               <span>VICTIM TRIAGE MAP</span>
+            </button>
+
+            <button
+              onClick={() => setCurrentModule('video-analysis')}
+              className={`px-3.5 py-1.5 rounded text-xs font-mono font-bold transition flex items-center space-x-2 ${
+                currentModule === 'video-analysis'
+                  ? 'bg-amber-900/60 text-amber-200 border border-amber-600/60 shadow-lg'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Film className="w-4 h-4 text-amber-500" />
+              <span>VIDEO THREAT ANALYSIS</span>
             </button>
 
             <button
@@ -181,7 +194,12 @@ export default function App() {
           </>
         )}
 
-        {/* Module 2: Climate Risk Intelligence 3D Globe */}
+        {/* Module 2: Video Threat Analysis */}
+        {currentModule === 'video-analysis' && (
+          <VideoThreatAnalysis />
+        )}
+
+        {/* Module 3: Climate Risk Intelligence 3D Globe */}
         {currentModule === 'climate-risk' && (
           <ClimateRiskModule />
         )}
