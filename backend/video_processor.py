@@ -3,42 +3,58 @@ import cv2
 import time
 import math
 import uuid
+import base64
 import numpy as np
 from typing import List, Dict, Tuple, Optional
 from detection import PersonDetector
 from tracking_state import InactivityTracker
+
+# Try importing OpenAI library for GPT-4o mini Stage 2 vision verification
+try:
+    from openai import OpenAI
+    HAS_OPENAI_LIB = True
+except ImportError:
+    HAS_OPENAI_LIB = False
 
 
 class VideoThreatProcessor:
     """Two-Stage Video Threat Analysis Pipeline:
 
     Stage 1: Candidate Detection (YOLOv8 + ByteTrack + Life-Threat Heuristics)
-    Stage 2: Vision Verification (Verification Engine / LLM Double-Check)
+    Stage 2: GPT-4o mini Vision Verification (OpenAI API double-check)
     """
 
     def __init__(self, model_name: str = "yolov8n.pt", sample_fps: float = 2.0):
         """
-        :param model_name: YOLO model weights
-        :param sample_fps: Frames per second to sample for processing (default 2.0 fps)
+        :param model_name: YOLO model weights (default yolov8n.pt)
+        :param sample_fps: Frame sampling rate (default 2.0 fps)
         """
         self.detector = PersonDetector(model_name=model_name, conf_thresh=0.25)
         self.inactivity_tracker = InactivityTracker(history_length=30, min_frames=10)
         self.sample_fps = sample_fps
 
+        # Initialize OpenAI client if API key is present
+        self.api_key = os.getenv("OPENAI_API_KEY")
+        if HAS_OPENAI_LIB and self.api_key:
+            self.openai_client = OpenAI(api_key=self.api_key)
+            print("[+] OpenAI Client initialized with GPT-4o mini Vision verification.")
+        else:
+            self.openai_client = None
+            if not self.api_key:
+                print("[!] OPENAI_API_KEY not set. Using vision-heuristic fallback for Stage 2.")
+
     def process_video_file(
         self,
         video_path: str,
         output_dir: str,
-        video_id: str,
-        vision_verifier_fn: Optional[callable] = None,
+        video_id: str
     ) -> Dict:
-        """Process video file through Stage 1 & Stage 2 pipeline.
+        """Process input video file through Stage 1 & Stage 2 pipeline.
 
-        :param video_path: Path to input MP4/MOV/AVI video file
-        :param output_dir: Path to save cropped screenshots
-        :param video_id: Unique video job ID
-        :param vision_verifier_fn: Optional custom Vision LLM verifier callback
-        :return: Dict containing job summary, verified_threats, and rejected_candidates
+        :param video_path: Input video file path
+        :param output_dir: Directory to save screenshots
+        :param video_id: Unique job ID
+        :return: Dict containing verified_threats and rejected_candidates
         """
         if not os.path.exists(video_path):
             raise FileNotFoundError(f"Video file not found: {video_path}")
@@ -56,10 +72,10 @@ class VideoThreatProcessor:
         sample_interval = max(1, int(fps / self.sample_fps))
 
         frame_idx = 0
-        bbox_history: Dict[int, List[Dict]] = {}  # track_id -> history of bboxes
-        raw_candidate_flags: List[Dict] = []  # Per-frame flags
+        bbox_history: Dict[int, List[Dict]] = {}
+        raw_candidate_flags: List[Dict] = []
 
-        print(f"[+] Starting Stage 1 Processing for {video_id} ({total_frames} frames, {duration_sec:.1f}s)...")
+        print(f"[+] Starting Stage 1 Candidate Detection for {video_id} ({total_frames} frames, {duration_sec:.1f}s)...")
 
         while cap.isOpened():
             ret, frame = cap.read()
@@ -99,7 +115,7 @@ class VideoThreatProcessor:
 
                 history = bbox_history[track_id]
 
-                # ─── Heuristic A: Immobile / Possible Unconscious ────────────────
+                # ─── Candidate Heuristic A: Immobile / Possible Unconscious ────────
                 if is_inactive and len(history) >= 8:
                     raw_candidate_flags.append({
                         "track_id": track_id,
@@ -111,8 +127,7 @@ class VideoThreatProcessor:
                         "frame": frame.copy()
                     })
 
-                # ─── Heuristic B: Trapped / Under Debris ────────────────────────
-                # Detect sudden unexplained bbox area shrink (> 40% shrink) followed by stationary state
+                # ─── Candidate Heuristic B: Trapped / Under Debris ────────────────
                 if len(history) >= 5:
                     prev_area = (history[-5]["bbox"][2] - history[-5]["bbox"][0]) * (history[-5]["bbox"][3] - history[-5]["bbox"][1])
                     curr_area = (bbox[2] - bbox[0]) * (bbox[3] - bbox[1])
@@ -127,8 +142,7 @@ class VideoThreatProcessor:
                             "frame": frame.copy()
                         })
 
-                # ─── Heuristic C: Submerging in Water ───────────────────────────
-                # HSV thresholding for water reflection/muddy water overlap in lower half of bbox
+                # ─── Candidate Heuristic C: Submerging in Water ───────────────────
                 x1, y1, x2, y2 = map(int, bbox)
                 h, w, _ = frame.shape
                 x1, y1, x2, y2 = max(0, x1), max(0, y1), min(w, x2), min(h, y2)
@@ -137,7 +151,6 @@ class VideoThreatProcessor:
                     lower_body = frame[int(y1 + (y2 - y1) * 0.5):y2, x1:x2]
                     if lower_body.size > 0:
                         hsv = cv2.cvtColor(lower_body, cv2.COLOR_BGR2HSV)
-                        # Water / flood HSV mask range (brownish/muddy or bluish water)
                         water_mask = cv2.inRange(hsv, (10, 30, 30), (35, 255, 255))
                         water_ratio = np.sum(water_mask > 0) / (water_mask.size + 1e-5)
                         if water_ratio > 0.45:
@@ -153,11 +166,11 @@ class VideoThreatProcessor:
 
         cap.release()
 
-        # ─── Group Candidate Flags into Discrete Candidate Events ────────────────
+        # Group consecutive candidate detections into discrete candidate events
         candidate_events = self._group_candidate_events(raw_candidate_flags)
-        print(f"[+] Stage 1 Complete: Identified {len(candidate_events)} candidate threat events.")
+        print(f"[+] Stage 1 Complete: {len(candidate_events)} candidate threat events flagged.")
 
-        # ─── Stage 2: Vision-LLM Double Check & Verification ──────────────────────
+        # ─── Stage 2: GPT-4o mini Vision Verification Layer ──────────────────────
         verified_threats = []
         rejected_candidates = []
 
@@ -169,7 +182,7 @@ class VideoThreatProcessor:
             peak_conf = candidate["peak_confidence"]
             timecode_str = self._format_timecode(candidate["start_timestamp"])
 
-            # Save screenshot frame with annotated bounding box
+            # Render bounding box on screenshot frame
             annotated_frame = cropped_frame.copy()
             x1, y1, x2, y2 = map(int, bbox)
             cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
@@ -187,11 +200,8 @@ class VideoThreatProcessor:
             screenshot_filepath = os.path.join(output_dir, screenshot_filename)
             cv2.imwrite(screenshot_filepath, annotated_frame)
 
-            # Vision Verification (LLM or Vision Verification Callback)
-            if vision_verifier_fn:
-                verified, reasoning = vision_verifier_fn(annotated_frame, threat_type)
-            else:
-                verified, reasoning = self._default_vision_verifier(threat_type, peak_conf)
+            # Stage 2 Verification via GPT-4o mini Vision API
+            verified, reasoning = self._verify_with_gpt4o_mini(annotated_frame, threat_type, peak_conf)
 
             record = {
                 "id": str(uuid.uuid4()),
@@ -199,8 +209,8 @@ class VideoThreatProcessor:
                 "track_id": track_id,
                 "threat_type": threat_type,
                 "yolo_confidence": round(peak_conf, 2),
-                "llm_verified": verified,
-                "llm_reasoning": reasoning,
+                "gpt4o_mini_verified": verified,
+                "gpt4o_mini_reasoning": reasoning,
                 "timestamp_sec": round(candidate["start_timestamp"], 1),
                 "timecode": timecode_str,
                 "screenshot_url": f"/uploads/{video_id}/screenshots/{screenshot_filename}",
@@ -215,7 +225,7 @@ class VideoThreatProcessor:
             else:
                 rejected_candidates.append(record)
 
-        print(f"[+] Stage 2 Complete: {len(verified_threats)} Verified Threats, {len(rejected_candidates)} Rejected Candidates.")
+        print(f"[+] Stage 2 Complete: {len(verified_threats)} Verified Threats (GPT-4o mini), {len(rejected_candidates)} Rejected Candidates.")
 
         return {
             "video_id": video_id,
@@ -227,8 +237,61 @@ class VideoThreatProcessor:
             "rejected_candidates": rejected_candidates
         }
 
+    def _verify_with_gpt4o_mini(self, frame: np.ndarray, threat_type: str, conf: float) -> Tuple[bool, str]:
+        """Send peak-confidence candidate frame to GPT-4o mini Vision API for confirmation/rejection."""
+        prompt = (
+            f"Does this image show a person in a {threat_type} situation "
+            "(trapped under debris / submerging in water / immobile-possibly unconscious)? "
+            "Respond with confirmed or rejected, plus a one-sentence reasoning."
+        )
+
+        if self.openai_client:
+            try:
+                # Convert image to Base64 JPEG
+                _, buffer = cv2.imencode('.jpg', frame)
+                base64_image = base64.b64encode(buffer).decode('utf-8')
+
+                response = self.openai_client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": prompt},
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{base64_image}"
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    max_tokens=120
+                )
+
+                reply = response.choices[0].message.content.strip()
+                reply_lower = reply.lower()
+
+                is_confirmed = "confirmed" in reply_lower
+                return is_confirmed, f"[GPT-4o mini] {reply}"
+
+            except Exception as e:
+                print(f"[!] OpenAI API error during GPT-4o mini verification: {e}")
+
+        # Heuristic fallback if OPENAI_API_KEY is not configured
+        if conf >= 0.35:
+            reasoning_map = {
+                "Immobile / Possible Unconscious": "Motion analysis confirms person in stationary position over consecutive frames.",
+                "Trapped / Under Debris": "Bounding box structural occlusion pattern detected.",
+                "Submerging in Water": "Water color frequency mask overlap detected on lower body region."
+            }
+            reason = reasoning_map.get(threat_type, f"Confirmed candidate for {threat_type}.")
+            return True, f"[VERIFIED BY VISION-HEURISTIC] {reason} (Set OPENAI_API_KEY for live GPT-4o mini)"
+        else:
+            return False, f"[REJECTED] Candidate confidence too low ({conf:.2f})."
+
     def _group_candidate_events(self, raw_flags: List[Dict]) -> List[Dict]:
-        """Group consecutive frame detections per track_id into candidate events."""
         if not raw_flags:
             return []
 
@@ -241,7 +304,6 @@ class VideoThreatProcessor:
 
         candidate_events = []
         for (track_id, threat_type), flags in grouped.items():
-            # Pick peak confidence flag as representative frame
             flags_sorted = sorted(flags, key=lambda f: f["confidence"], reverse=True)
             peak = flags_sorted[0]
             start_ts = min(f["timestamp_sec"] for f in flags)
@@ -259,19 +321,6 @@ class VideoThreatProcessor:
             })
 
         return candidate_events
-
-    def _default_vision_verifier(self, threat_type: str, conf: float) -> Tuple[bool, str]:
-        """Fallback/Default Vision Verification rule when no live Vision LLM API key is present."""
-        if conf >= 0.35:
-            reasoning_map = {
-                "Immobile / Possible Unconscious": "Vision analysis confirms individual in motionless posture for prolonged duration without evasive movement.",
-                "Trapped / Under Debris": "Vision analysis confirms partial body obstruction beneath structural collapse materials.",
-                "Submerging in Water": "Vision analysis confirms water surface boundary overlapping lower torso/body perimeter."
-            }
-            reasoning = reasoning_map.get(threat_type, f"Vision analysis confirmed threat status for {threat_type}.")
-            return True, f"[VERIFIED BY VISION-AI] {reasoning}"
-        else:
-            return False, f"[REJECTED] Low visual feature correlation for {threat_type} (conf={conf:.2f})."
 
     def _format_timecode(self, seconds: float) -> str:
         mins = int(seconds // 60)

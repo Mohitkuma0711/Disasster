@@ -1,104 +1,38 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { UploadCloud, Film, Play, CheckCircle2, AlertTriangle, ShieldCheck, FileVideo, Eye, Clock, XCircle, Sparkles, Filter } from 'lucide-react';
-
-// Sample fallback jobs for immediate interactive presentation
-const FALLBACK_VIDEO_JOBS = [
-  {
-    video_id: 'JOB-FL8291A',
-    filename: 'flood_rescue_recon_drone_01.mp4',
-    video_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-    status: 'completed',
-    upload_timestamp: new Date(Date.now() - 3600000).toISOString(),
-    duration_sec: 14.5,
-    verified_count: 2,
-    rejected_count: 1,
-  },
-  {
-    video_id: 'JOB-ED7102B',
-    filename: 'earthquake_structural_debris_sector3.mp4',
-    video_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-    status: 'completed',
-    upload_timestamp: new Date(Date.now() - 7200000).toISOString(),
-    duration_sec: 22.0,
-    verified_count: 1,
-    rejected_count: 3,
-  }
-];
-
-const FALLBACK_VERIFIED_THREATS = {
-  'JOB-FL8291A': [
-    {
-      id: 'T-9001',
-      video_id: 'JOB-FL8291A',
-      track_id: 1,
-      threat_type: 'Submerging in Water',
-      yolo_confidence: 0.89,
-      llm_verified: true,
-      llm_reasoning: '[VERIFIED BY VISION-AI] Vision analysis confirms water surface boundary overlapping lower torso/body perimeter.',
-      timestamp_sec: 4.2,
-      timecode: '00:04',
-      screenshot_url: 'https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=600&q=80',
-      status: 'unreviewed'
-    },
-    {
-      id: 'T-9002',
-      video_id: 'JOB-FL8291A',
-      track_id: 2,
-      threat_type: 'Immobile / Possible Unconscious',
-      yolo_confidence: 0.94,
-      llm_verified: true,
-      llm_reasoning: '[VERIFIED BY VISION-AI] Vision analysis confirms individual in motionless posture for prolonged duration without evasive movement.',
-      timestamp_sec: 9.8,
-      timecode: '00:09',
-      screenshot_url: 'https://images.unsplash.com/photo-1508873696983-2df515122519?auto=format&fit=crop&w=600&q=80',
-      status: 'unreviewed'
-    }
-  ],
-  'JOB-ED7102B': [
-    {
-      id: 'T-9003',
-      video_id: 'JOB-ED7102B',
-      track_id: 3,
-      threat_type: 'Trapped / Under Debris',
-      yolo_confidence: 0.91,
-      llm_verified: true,
-      llm_reasoning: '[VERIFIED BY VISION-AI] Vision analysis confirms partial body obstruction beneath structural collapse materials.',
-      timestamp_sec: 12.5,
-      timecode: '00:12',
-      screenshot_url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=600&q=80',
-      status: 'unreviewed'
-    }
-  ]
-};
+import { UploadCloud, Film, Play, CheckCircle2, AlertTriangle, ShieldCheck, FileVideo, Clock, XCircle, Sparkles, RefreshCw } from 'lucide-react';
 
 export default function VideoThreatAnalysis() {
-  const [jobs, setJobs] = useState(FALLBACK_VIDEO_JOBS);
+  const [jobs, setJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
-  const [threats, setThreats] = useState(FALLBACK_VERIFIED_THREATS);
+  const [threats, setThreats] = useState({});
   const [fileToUpload, setFileToUpload] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [activeThreatFilter, setActiveThreatFilter] = useState('all');
+  const [polling, setPolling] = useState(false);
 
   const videoPlayerRef = useRef(null);
 
-  // Fetch Jobs from backend API
-  useEffect(() => {
-    async function fetchJobs() {
-      try {
-        const res = await fetch('http://localhost:8000/video-jobs');
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.length > 0) setJobs(data);
-        }
-      } catch (err) {
-        console.warn("Backend video-jobs endpoint offline (using local demo jobs):", err);
+  // Fetch real uploaded video jobs from backend API
+  const fetchJobs = async () => {
+    try {
+      const res = await fetch('http://localhost:8000/video-jobs');
+      if (res.ok) {
+        const data = await res.json();
+        setJobs(data || []);
       }
+    } catch (err) {
+      console.warn("Backend video-jobs endpoint unreachable:", err);
     }
+  };
+
+  useEffect(() => {
     fetchJobs();
+    const interval = setInterval(fetchJobs, 4000);
+    return () => clearInterval(interval);
   }, []);
 
-  // Fetch Verified Threats when a Job is selected
+  // Fetch Verified Threats for selected Job
   useEffect(() => {
     if (!selectedJob) return;
     async function fetchJobThreats() {
@@ -114,64 +48,52 @@ export default function VideoThreatAnalysis() {
           }
         }
       } catch (err) {
-        console.warn("Backend job details offline, showing fallback threats:", err);
+        console.warn("Error fetching verified threats:", err);
       }
     }
     fetchJobThreats();
   }, [selectedJob]);
 
-  // Handle File Upload
+  // Handle Video File Upload
   const handleUploadSubmit = async (e) => {
     e.preventDefault();
     if (!fileToUpload) return;
 
     setUploading(true);
-    setUploadProgress(20);
+    setUploadProgress(25);
 
     const formData = new FormData();
     formData.append('file', fileToUpload);
 
     try {
-      setUploadProgress(50);
+      setUploadProgress(60);
       const res = await fetch('http://localhost:8000/upload-video', {
         method: 'POST',
         body: formData,
       });
 
-      setUploadProgress(80);
+      setUploadProgress(90);
 
       if (res.ok) {
         const data = await res.json();
-        setJobs(prev => [data.job, ...prev]);
-        setFileToUpload(null);
         setUploadProgress(100);
+        setFileToUpload(null);
+        fetchJobs();
       } else {
-        throw new Error('Upload failed');
+        const errData = await res.json();
+        alert(`Upload error: ${errData.detail || 'Failed to upload video'}`);
       }
     } catch (err) {
-      console.warn("Upload endpoint unreachable, creating demo job entry:", err);
-      const mockId = `JOB-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-      const mockJob = {
-        video_id: mockId,
-        filename: fileToUpload.name,
-        video_url: URL.createObjectURL(fileToUpload),
-        status: 'completed',
-        upload_timestamp: new Date().toISOString(),
-        duration_sec: 18.0,
-        verified_count: 2,
-        rejected_count: 1,
-      };
-      setJobs(prev => [mockJob, ...prev]);
-      setFileToUpload(null);
+      alert(`Network error uploading video to http://localhost:8000/upload-video. Ensure backend is running.`);
     } finally {
       setTimeout(() => {
         setUploading(false);
         setUploadProgress(0);
-      }, 600);
+      }, 500);
     }
   };
 
-  // Jump Video Player to precise timecode
+  // Seek Video Player to timestamp
   const handleJumpToTimecode = (seconds) => {
     if (videoPlayerRef.current) {
       videoPlayerRef.current.currentTime = seconds;
@@ -196,7 +118,7 @@ export default function VideoThreatAnalysis() {
         body: JSON.stringify({ status: newStatus }),
       });
     } catch (err) {
-      console.warn("Backend status update offline (updated local state):", err);
+      console.warn("Backend status update offline:", err);
     }
   };
 
@@ -209,17 +131,17 @@ export default function VideoThreatAnalysis() {
 
   return (
     <div className="space-y-6 font-mono">
-      {/* Top Header */}
+      {/* Module Header */}
       <div className="bg-slate-950/90 border border-amber-900/40 rounded-xl p-5 shadow-2xl backdrop-blur flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
             <Film className="w-5 h-5 text-amber-500" />
             <h2 className="text-xl font-bold font-typewriter text-amber-300 uppercase tracking-wide">
-              Automated Video Threat Analysis & Verification Engine
+              Automated Video Threat Analysis & GPT-4o Mini Verification Engine
             </h2>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Stage 1 Candidate Detection (YOLOv8 + ByteTrack) &rarr; Stage 2 Vision-LLM Verification & Evidence Capture.
+            Stage 1 Candidate Detection (YOLOv8 + ByteTrack) &rarr; Stage 2 GPT-4o mini Vision Verification.
           </p>
         </div>
 
@@ -230,12 +152,12 @@ export default function VideoThreatAnalysis() {
           <span className="text-slate-500">&rarr;</span>
           <span className="px-3 py-1 bg-emerald-950 text-emerald-300 border border-emerald-800 rounded font-bold flex items-center space-x-1">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>STAGE 2: VISION-LLM VERIFIED</span>
+            <span>STAGE 2: GPT-4o MINI VERIFIED</span>
           </span>
         </div>
       </div>
 
-      {/* Upload Drag & Drop Component */}
+      {/* Upload Component */}
       <div className="bg-slate-950/90 border border-amber-900/40 rounded-xl p-5 shadow-2xl backdrop-blur">
         <form onSubmit={handleUploadSubmit} className="space-y-4">
           <div className="text-sm font-bold font-typewriter text-amber-300 uppercase flex items-center space-x-2">
@@ -266,7 +188,7 @@ export default function VideoThreatAnalysis() {
           {uploading && (
             <div className="space-y-1">
               <div className="flex justify-between text-xs text-amber-300">
-                <span>Processing Stage 1 Candidate Search & Stage 2 Verification...</span>
+                <span>Uploading video file and starting async two-stage analysis...</span>
                 <span>{uploadProgress}%</span>
               </div>
               <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
@@ -282,7 +204,7 @@ export default function VideoThreatAnalysis() {
               className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold font-typewriter rounded-lg shadow-lg shadow-amber-900/30 transition disabled:opacity-50 text-xs flex items-center space-x-2"
             >
               <Sparkles className="w-4 h-4" />
-              <span>START TWO-STAGE THREAT ANALYSIS</span>
+              <span>START GPT-4o MINI THREAT ANALYSIS</span>
             </button>
           </div>
         </form>
@@ -290,56 +212,75 @@ export default function VideoThreatAnalysis() {
 
       {/* Video Jobs Gallery Grid */}
       <div className="space-y-4">
-        <div className="text-sm font-bold font-typewriter text-amber-300 uppercase tracking-wide flex items-center space-x-2">
-          <Film className="w-4 h-4 text-amber-500" />
-          <span>Processed Reconnaissance Video Files ({jobs.length})</span>
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-bold font-typewriter text-amber-300 uppercase tracking-wide flex items-center space-x-2">
+            <Film className="w-4 h-4 text-amber-500" />
+            <span>Processed Video Jobs ({jobs.length})</span>
+          </div>
+
+          <button
+            onClick={fetchJobs}
+            className="text-xs text-amber-400 hover:text-amber-200 flex items-center space-x-1 bg-slate-900 px-2.5 py-1 rounded border border-slate-800"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>REFRESH LIST</span>
+          </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {jobs.map((job) => (
-            <div
-              key={job.video_id}
-              onClick={() => setSelectedJob(job)}
-              className={`p-4 rounded-xl border transition cursor-pointer flex flex-col justify-between space-y-3 ${
-                selectedJob?.video_id === job.video_id
-                  ? 'bg-amber-950/30 border-amber-500 shadow-xl shadow-amber-950/50'
-                  : 'bg-slate-950/90 border-amber-900/40 hover:border-amber-700/60'
-              }`}
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <span className="text-[10px] font-bold font-mono text-amber-500 uppercase">
-                    {job.video_id}
-                  </span>
-                  <h4 className="text-sm font-bold font-typewriter text-slate-200 truncate max-w-[260px]">
-                    {job.filename}
-                  </h4>
-                </div>
-                <span className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase ${
-                  job.status === 'completed' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' :
-                  job.status === 'processing' ? 'bg-amber-950 text-amber-300 border border-amber-800 animate-pulse' :
-                  'bg-slate-900 text-slate-400'
-                }`}>
-                  {job.status}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-xs font-mono text-slate-400 border-t border-slate-900 pt-2">
-                <div className="flex items-center space-x-1">
-                  <Clock className="w-3.5 h-3.5 text-amber-500" />
-                  <span>{job.duration_sec ? `${job.duration_sec}s` : 'N/A'}</span>
-                </div>
-
-                {/* Verified Count Badge */}
-                <div className="flex items-center space-x-1.5">
-                  <span className="px-2 py-0.5 bg-red-950 text-red-300 border border-red-800 rounded font-bold">
-                    {job.verified_count || (threats[job.video_id] || []).length} VERIFIED THREATS
+        {jobs.length === 0 ? (
+          <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-8 text-center text-slate-400 space-y-2">
+            <FileVideo className="w-10 h-10 text-slate-600 mx-auto" />
+            <div className="font-typewriter text-amber-300 font-bold">No uploaded videos yet</div>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              Upload an MP4/MOV/AVI video file using the panel above to start candidate detection and GPT-4o mini vision verification.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {jobs.map((job) => (
+              <div
+                key={job.video_id}
+                onClick={() => setSelectedJob(job)}
+                className={`p-4 rounded-xl border transition cursor-pointer flex flex-col justify-between space-y-3 ${
+                  selectedJob?.video_id === job.video_id
+                    ? 'bg-amber-950/30 border-amber-500 shadow-xl shadow-amber-950/50'
+                    : 'bg-slate-950/90 border-amber-900/40 hover:border-amber-700/60'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold font-mono text-amber-500 uppercase">
+                      {job.video_id}
+                    </span>
+                    <h4 className="text-sm font-bold font-typewriter text-slate-200 truncate max-w-[260px]">
+                      {job.filename}
+                    </h4>
+                  </div>
+                  <span className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase ${
+                    job.status === 'completed' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' :
+                    job.status === 'processing' ? 'bg-amber-950 text-amber-300 border border-amber-800 animate-pulse' :
+                    'bg-slate-900 text-slate-400'
+                  }`}>
+                    {job.status}
                   </span>
                 </div>
+
+                <div className="flex items-center justify-between text-xs font-mono text-slate-400 border-t border-slate-900 pt-2">
+                  <div className="flex items-center space-x-1">
+                    <Clock className="w-3.5 h-3.5 text-amber-500" />
+                    <span>{job.duration_sec ? `${job.duration_sec}s` : 'N/A'}</span>
+                  </div>
+
+                  <div className="flex items-center space-x-1.5">
+                    <span className="px-2 py-0.5 bg-red-950 text-red-300 border border-red-800 rounded font-bold">
+                      {job.verified_count || 0} VERIFIED THREATS
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Video Detail & Interactive Review Case Modal */}
@@ -368,7 +309,7 @@ export default function VideoThreatAnalysis() {
               <video
                 ref={videoPlayerRef}
                 controls
-                src={selectedJob.video_url}
+                src={`http://localhost:8000${selectedJob.video_url}`}
                 className="w-full h-full object-contain"
               />
             </div>
@@ -381,7 +322,7 @@ export default function VideoThreatAnalysis() {
               </div>
               <div className="flex flex-wrap gap-2">
                 {jobThreats.length === 0 ? (
-                  <span className="text-xs text-slate-500 italic">No verified threats detected in this recording.</span>
+                  <span className="text-xs text-slate-500 italic">No verified threats confirmed in this video recording.</span>
                 ) : (
                   jobThreats.map((t) => (
                     <button
@@ -405,7 +346,7 @@ export default function VideoThreatAnalysis() {
               <div className="flex items-center space-x-2">
                 <ShieldCheck className="w-5 h-5 text-emerald-400" />
                 <h4 className="text-md font-bold font-typewriter text-amber-300 uppercase">
-                  Verified Threat Evidence Screenshots ({filteredThreats.length})
+                  GPT-4o Mini Verified Threat Screenshots ({filteredThreats.length})
                 </h4>
               </div>
 
@@ -429,6 +370,8 @@ export default function VideoThreatAnalysis() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredThreats.map((t) => {
                 const isSubmerging = t.threat_type.includes('Submerging') || t.threat_type.includes('Trapped');
+                const screenshotSrc = t.screenshot_url.startsWith('http') ? t.screenshot_url : `http://localhost:8000${t.screenshot_url}`;
+
                 return (
                   <div
                     key={t.id}
@@ -448,7 +391,7 @@ export default function VideoThreatAnalysis() {
                     {/* Screenshot Frame */}
                     <div className="relative rounded-lg overflow-hidden border border-slate-800 bg-black aspect-video">
                       <img
-                        src={t.screenshot_url}
+                        src={screenshotSrc}
                         alt={`Threat at ${t.timecode}`}
                         className="w-full h-full object-cover"
                       />
@@ -458,9 +401,9 @@ export default function VideoThreatAnalysis() {
                     <div className="text-xs font-mono text-slate-300 bg-slate-950/80 p-2.5 rounded border border-slate-800 space-y-1">
                       <div className="text-emerald-400 font-bold flex items-center space-x-1">
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>AI Explanation (Confidence: {Math.round((t.yolo_confidence || 0.90) * 100)}%)</span>
+                        <span>GPT-4o Mini Explanation (YOLO Conf: {Math.round((t.yolo_confidence || 0.90) * 100)}%)</span>
                       </div>
-                      <p className="italic text-slate-300 text-[11px]">{t.llm_reasoning}</p>
+                      <p className="italic text-slate-300 text-[11px]">{t.gpt4o_mini_reasoning}</p>
                     </div>
 
                     {/* Action Buttons */}
