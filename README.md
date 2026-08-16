@@ -152,3 +152,7 @@ python seed_climate_risk.py
 ## 📜 License & Acknowledgments
 
 Developed for Smart India Hackathon (SIH). Powered by Ultralytics YOLOv8, ByteTrack, Scikit-Learn, Google Gemini 2.0 Flash, Leaflet, and Three-Globe.
+
+
+## Contributors
+- jyotikuma741 (jyotikuma741@gmail.com)
