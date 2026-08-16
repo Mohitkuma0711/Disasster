@@ -1,3 +1,4 @@
+import ChatbotWidget from './components/ChatbotWidget';
 import React, { useState, useEffect } from 'react';
 import MapView from './components/MapView';
 import PriorityQueue from './components/PriorityQueue';
@@ -104,7 +105,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070a10] text-amber-100 font-mono pb-12">
+    <div className="min-h-screen bg-[#070a10] text-white font-mono pb-12">
       {/* Top Tactical Command Header */}
       <header className="bg-slate-950/95 border-b border-amber-900/50 sticky top-0 z-[2000] backdrop-blur px-4 py-3 shadow-2xl">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -116,7 +117,7 @@ export default function App() {
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h1 className="text-xl font-bold font-typewriter tracking-wider text-amber-300 uppercase">
+                <h1 className="text-xl font-bold font-typewriter tracking-wider text-white uppercase">
                   DISASTER VICTIM DETECTION & COMMAND INTELLIGENCE
                 </h1>
                 <span className="px-2 py-0.5 text-[10px] font-bold bg-red-950 text-red-400 border border-red-800/80 rounded uppercase">
@@ -135,7 +136,7 @@ export default function App() {
               onClick={() => setCurrentModule('victim-triage')}
               className={`px-3.5 py-1.5 rounded text-xs font-mono font-bold transition flex items-center space-x-2 ${
                 currentModule === 'victim-triage'
-                  ? 'bg-amber-900/60 text-amber-200 border border-amber-600/60 shadow-lg'
+                  ? 'bg-amber-900/60 text-white border border-amber-600/60 shadow-lg'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -147,7 +148,7 @@ export default function App() {
               onClick={() => setCurrentModule('video-analysis')}
               className={`px-3.5 py-1.5 rounded text-xs font-mono font-bold transition flex items-center space-x-2 ${
                 currentModule === 'video-analysis'
-                  ? 'bg-amber-900/60 text-amber-200 border border-amber-600/60 shadow-lg'
+                  ? 'bg-amber-900/60 text-white border border-amber-600/60 shadow-lg'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -159,7 +160,7 @@ export default function App() {
               onClick={() => setCurrentModule('climate-risk')}
               className={`px-3.5 py-1.5 rounded text-xs font-mono font-bold transition flex items-center space-x-2 ${
                 currentModule === 'climate-risk'
-                  ? 'bg-amber-900/60 text-amber-200 border border-amber-600/60 shadow-lg'
+                  ? 'bg-amber-900/60 text-white border border-amber-600/60 shadow-lg'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -203,6 +204,7 @@ export default function App() {
         {currentModule === 'climate-risk' && (
           <ClimateRiskModule />
         )}
+        <ChatbotWidget victims={victims} />
       </main>
     </div>
   );

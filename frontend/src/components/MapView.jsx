@@ -86,8 +86,8 @@ export default function MapView({ victims: propVictims, onSelectVictim }) {
       {/* Evidence Board Top Bar */}
       <div className="absolute top-0 left-0 right-0 z-[1000] bg-slate-950/90 backdrop-blur border-b border-amber-900/40 px-4 py-2.5 flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <Navigation className="w-4 h-4 text-amber-500 animate-pulse" />
-          <span className="font-typewriter text-sm tracking-wider text-amber-200 uppercase">
+          <Navigation className="w-4 h-4 text-blue-400 animate-pulse" />
+          <span className="font-typewriter text-sm tracking-wider text-white uppercase">
             GIS Tactical Map & Target Distribution
           </span>
         </div>
@@ -100,7 +100,7 @@ export default function MapView({ victims: propVictims, onSelectVictim }) {
           </div>
           <div className="flex items-center space-x-1.5">
             <span className="w-3 h-3 rounded-full bg-amber-500 border border-amber-200"></span>
-            <span className="text-amber-300">MED (40-70)</span>
+            <span className="text-white">MED (40-70)</span>
           </div>
           <div className="flex items-center space-x-1.5">
             <span className="w-3 h-3 rounded-full bg-yellow-500 border border-yellow-200"></span>
@@ -152,13 +152,13 @@ export default function MapView({ victims: propVictims, onSelectVictim }) {
                 <Popup>
                   <div className="space-y-2 p-1 min-w-[200px]">
                     <div className="flex items-center justify-between border-b border-amber-900/50 pb-1.5">
-                      <span className="font-bold text-amber-300 text-sm">
+                      <span className="font-bold text-white text-sm">
                         CASE #{victim.track_id || victim.id?.slice(0, 8)}
                       </span>
                       <span className={`px-2 py-0.5 text-[10px] font-bold rounded ${
                         isRescued ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' :
                         score > 70 ? 'bg-red-950 text-red-300 border border-red-800' :
-                        score >= 40 ? 'bg-amber-950 text-amber-300 border border-amber-800' :
+                        score >= 40 ? 'bg-amber-950 text-white border border-amber-800' :
                         'bg-yellow-950 text-yellow-300 border border-yellow-800'
                       }`}>
                         {isRescued ? 'RESCUED' : `PRIORITY: ${Math.round(score)}`}
@@ -166,11 +166,11 @@ export default function MapView({ victims: propVictims, onSelectVictim }) {
                     </div>
 
                     <div className="text-xs space-y-1 text-slate-300 font-mono">
-                      <div><strong className="text-amber-400">Lat/Lng:</strong> {lat.toFixed(4)}, {lng.toFixed(4)}</div>
-                      <div><strong className="text-amber-400">Confidence:</strong> {Math.round((victim.confidence || 0.85) * 100)}%</div>
-                      <div><strong className="text-amber-400">Status:</strong> {victim.is_inactive ? 'STATIONARY (IMPACTED)' : 'MOVING'}</div>
+                      <div><strong className="text-blue-300">Lat/Lng:</strong> {lat.toFixed(4)}, {lng.toFixed(4)}</div>
+                      <div><strong className="text-blue-300">Confidence:</strong> {Math.round((victim.confidence || 0.85) * 100)}%</div>
+                      <div><strong className="text-blue-300">Status:</strong> {victim.is_inactive ? 'STATIONARY (IMPACTED)' : 'MOVING'}</div>
                       {victim.description && (
-                        <div className="pt-1 text-[11px] italic text-amber-200 border-t border-slate-800">
+                        <div className="pt-1 text-[11px] italic text-white border-t border-slate-800">
                           "{victim.description}"
                         </div>
                       )}

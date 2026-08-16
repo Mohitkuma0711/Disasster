@@ -178,9 +178,9 @@ export default function ClimateRiskModule() {
 
     const score = info ? info.overall_risk_score : 55.0;
 
-    if (score > 70) return 'rgba(239, 68, 68, 0.65)'; // Red High
-    if (score >= 40) return 'rgba(245, 158, 11, 0.60)'; // Orange Med
-    return 'rgba(234, 179, 8, 0.50)'; // Yellow Low
+    if (score > 70) return 'rgba(34, 197, 94, 0.80)'; // Red High
+    if (score >= 40) return 'rgba(74, 222, 128, 0.70)'; // Orange Med
+    return 'rgba(134, 239, 172, 0.60)'; // Yellow Low
   };
 
   // Format radar data for Recharts
@@ -199,10 +199,10 @@ export default function ClimateRiskModule() {
       <div className="absolute top-0 left-0 right-0 z-[100] bg-slate-950/90 backdrop-blur border-b border-amber-900/40 px-5 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="flex items-center space-x-3">
           <div className="p-1.5 bg-amber-950/80 border border-amber-600/50 rounded">
-            <GlobeIcon className="w-5 h-5 text-amber-400 animate-spin-slow" />
+            <GlobeIcon className="w-5 h-5 text-blue-300 animate-spin-slow" />
           </div>
           <div>
-            <h2 className="text-lg font-bold font-typewriter text-amber-300 uppercase tracking-wide">
+            <h2 className="text-lg font-bold font-typewriter text-white uppercase tracking-wide">
               3D Climate Risk & Disaster Vulnerability Intelligence
             </h2>
             <p className="text-xs text-slate-400">
@@ -216,7 +216,7 @@ export default function ClimateRiskModule() {
           <button
             onClick={() => setActiveLayer('india')}
             className={`px-3 py-1.5 text-xs font-mono rounded transition flex items-center space-x-1.5 ${
-              activeLayer === 'india' ? 'bg-amber-900/50 text-amber-200 border border-amber-700/60 font-bold' : 'text-slate-400 hover:text-slate-200'
+              activeLayer === 'india' ? 'bg-amber-900/50 text-white border border-amber-700/60 font-bold' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -225,7 +225,7 @@ export default function ClimateRiskModule() {
           <button
             onClick={() => setActiveLayer('global')}
             className={`px-3 py-1.5 text-xs font-mono rounded transition flex items-center space-x-1.5 ${
-              activeLayer === 'global' ? 'bg-amber-900/50 text-amber-200 border border-amber-700/60 font-bold' : 'text-slate-400 hover:text-slate-200'
+              activeLayer === 'global' ? 'bg-amber-900/50 text-white border border-amber-700/60 font-bold' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <GlobeIcon className="w-3.5 h-3.5" />
@@ -234,17 +234,33 @@ export default function ClimateRiskModule() {
         </div>
       </div>
 
-      {/* 3D Globe Canvas */}
-      <div className="w-full h-full pt-12">
+            {/* 3D Globe Canvas */}
+      <div className="w-full h-full pt-12 relative">
+        {/* Stylish Website Title Overlay Floating Over the Globe */}
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-[110] pointer-events-none flex flex-col items-center animate-in fade-in zoom-in duration-500">
+          <div className="bg-slate-950/85 border border-emerald-500/60 backdrop-blur-md px-6 py-2.5 rounded-full shadow-[0_0_30px_rgba(16,185,129,0.4)] flex items-center space-x-3 transition-all duration-300 hover:scale-105">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </span>
+            <h1 className="text-sm md:text-base font-extrabold tracking-widest uppercase bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent drop-shadow-[0_2px_10px_rgba(16,185,129,0.5)] font-sans">
+              DISASTER VICTIM DETECTION & CLIMATE INTELLIGENCE
+            </h1>
+          </div>
+          <span className="text-[10px] text-emerald-300 font-mono tracking-widest mt-1.5 uppercase bg-slate-950/80 px-3 py-0.5 rounded-full border border-emerald-800/60 shadow-lg">
+            SIH EVIDENTIAL COMMAND // 3D GLOBAL TACTICAL RADAR
+          </span>
+        </div>
+
         <Globe
           ref={globeEl}
-          globeImageUrl="//unpkg.com/three-globe/example/img/earth-dark.jpg"
+          globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
           bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
           backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
           polygonsData={geoJsonData ? geoJsonData.features : []}
           polygonCapColor={getPolygonColor}
-          polygonSideColor={() => 'rgba(15, 23, 42, 0.4)'}
-          polygonStrokeColor={() => '#78350f'}
+          polygonSideColor={() => 'rgba(34, 197, 94, 0.35)'}
+          polygonStrokeColor={() => '#4ade80'}
           polygonAltitude={0.015}
           polygonLabel={({ properties }) => `
             <div style="background:#0f172a; color:#fef3c7; border:1px solid #78350f; padding:6px 10px; border-radius:6px; font-family:monospace; font-size:12px;">
@@ -263,16 +279,16 @@ export default function ClimateRiskModule() {
             {/* Side Panel Header */}
             <div className="flex items-start justify-between border-b border-amber-900/40 pb-3 mb-4">
               <div>
-                <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">
+                <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">
                   CASE DOSSIER // {selectedRegion.region_type || 'REGION'}
                 </span>
-                <h3 className="text-xl font-bold font-typewriter text-amber-200">
+                <h3 className="text-xl font-bold font-typewriter text-white">
                   {selectedRegion.region_name}
                 </h3>
               </div>
               <button
                 onClick={() => setSelectedRegion(null)}
-                className="p-1 text-slate-400 hover:text-amber-300 hover:bg-slate-900 rounded"
+                className="p-1 text-slate-400 hover:text-white hover:bg-slate-900 rounded"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -287,7 +303,7 @@ export default function ClimateRiskModule() {
                 </div>
               </div>
               <span className={`px-2.5 py-1 text-xs font-bold rounded ${
-                selectedRegion.overall_risk_score > 70 ? 'bg-red-950 text-red-300 border border-red-800' : 'bg-amber-950 text-amber-300 border border-amber-800'
+                selectedRegion.overall_risk_score > 70 ? 'bg-red-950 text-red-300 border border-red-800' : 'bg-amber-950 text-white border border-amber-800'
               }`}>
                 {selectedRegion.overall_risk_score > 70 ? 'HIGH HAZARD' : 'MODERATE HAZARD'}
               </span>
@@ -298,7 +314,7 @@ export default function ClimateRiskModule() {
               <button
                 onClick={() => setActiveTab('forecast')}
                 className={`py-2 px-4 border-b-2 font-bold transition flex items-center space-x-1.5 ${
-                  activeTab === 'forecast' ? 'border-amber-500 text-amber-300 bg-amber-950/20' : 'border-transparent text-slate-400 hover:text-slate-200'
+                  activeTab === 'forecast' ? 'border-amber-500 text-white bg-amber-950/20' : 'border-transparent text-slate-400 hover:text-slate-200'
                 }`}
               >
                 <TrendingUp className="w-3.5 h-3.5" />
@@ -307,7 +323,7 @@ export default function ClimateRiskModule() {
               <button
                 onClick={() => setActiveTab('history')}
                 className={`py-2 px-4 border-b-2 font-bold transition flex items-center space-x-1.5 ${
-                  activeTab === 'history' ? 'border-amber-500 text-amber-300 bg-amber-950/20' : 'border-transparent text-slate-400 hover:text-slate-200'
+                  activeTab === 'history' ? 'border-amber-500 text-white bg-amber-950/20' : 'border-transparent text-slate-400 hover:text-slate-200'
                 }`}
               >
                 <History className="w-3.5 h-3.5" />
@@ -319,7 +335,7 @@ export default function ClimateRiskModule() {
             {activeTab === 'forecast' && (
               <div className="space-y-4">
                 <div className="text-xs text-slate-300 font-mono bg-slate-900/60 p-2.5 rounded border border-slate-800">
-                  <strong className="text-amber-400">Scoring Formula:</strong> 40% Hist. Freq + 40% Regional Vulnerability + 20% Environmental Trend
+                  <strong className="text-blue-300">Scoring Formula:</strong> 40% Hist. Freq + 40% Regional Vulnerability + 20% Environmental Trend
                 </div>
 
                 {/* Radar Chart */}
@@ -337,7 +353,7 @@ export default function ClimateRiskModule() {
                 {/* Vulnerability Factors */}
                 {selectedRegion.vulnerability_factors && (
                   <div className="space-y-2 text-xs font-mono">
-                    <div className="text-amber-400 font-bold uppercase text-[11px]">Vulnerability Indicators</div>
+                    <div className="text-blue-300 font-bold uppercase text-[11px]">Vulnerability Indicators</div>
                     {Object.entries(selectedRegion.vulnerability_factors).map(([key, val]) => (
                       <div key={key} className="flex justify-between border-b border-slate-800 pb-1">
                         <span className="text-slate-400 capitalize">{key.replace('_', ' ')}:</span>
@@ -355,7 +371,7 @@ export default function ClimateRiskModule() {
                 {/* Decade Frequency Chart */}
                 {selectedRegion.decade_trends && (
                   <div className="h-40 bg-slate-900/40 rounded border border-slate-800 p-2">
-                    <div className="text-[11px] text-amber-400 font-bold mb-1">DISASTER INCIDENTS PER DECADE</div>
+                    <div className="text-[11px] text-blue-300 font-bold mb-1">DISASTER INCIDENTS PER DECADE</div>
                     <ResponsiveContainer width="100%" height="85%">
                       <BarChart data={selectedRegion.decade_trends}>
                         <XAxis dataKey="decade" stroke="#94a3b8" fontSize={10} fontFamily="Courier Prime" />
@@ -369,11 +385,11 @@ export default function ClimateRiskModule() {
 
                 {/* Historical Events Timeline */}
                 <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                  <div className="text-amber-400 font-bold text-[11px] uppercase">Major Recorded Archive Events</div>
+                  <div className="text-blue-300 font-bold text-[11px] uppercase">Major Recorded Archive Events</div>
                   {selectedRegion.historical_events?.map((ev, i) => (
                     <div key={i} className="p-2.5 rounded bg-slate-900 border border-slate-800 space-y-1">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-amber-300">{ev.year} — {ev.type}</span>
+                        <span className="font-bold text-white">{ev.year} — {ev.type}</span>
                         <span className="px-1.5 py-0.5 text-[9px] bg-red-950 text-red-300 border border-red-800 rounded">
                           {ev.severity}
                         </span>

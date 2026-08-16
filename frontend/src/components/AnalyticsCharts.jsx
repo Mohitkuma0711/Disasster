@@ -26,8 +26,8 @@ export default function AnalyticsCharts({ victims = [] }) {
       {/* Priority Distribution Chart */}
       <div className="bg-slate-950/90 rounded-xl border border-amber-900/40 p-4 shadow-xl">
         <div className="flex items-center space-x-2 mb-3 border-b border-amber-900/30 pb-2">
-          <BarChart3 className="w-4 h-4 text-amber-500" />
-          <h3 className="text-sm font-bold font-typewriter text-amber-300 uppercase">
+          <BarChart3 className="w-4 h-4 text-blue-400" />
+          <h3 className="text-sm font-bold font-typewriter text-white uppercase">
             Priority Score Triage Spectrum
           </h3>
         </div>
@@ -52,8 +52,8 @@ export default function AnalyticsCharts({ victims = [] }) {
       {/* Rescue Status Pie Chart */}
       <div className="bg-slate-950/90 rounded-xl border border-amber-900/40 p-4 shadow-xl">
         <div className="flex items-center space-x-2 mb-3 border-b border-amber-900/30 pb-2">
-          <PieIcon className="w-4 h-4 text-amber-500" />
-          <h3 className="text-sm font-bold font-typewriter text-amber-300 uppercase">
+          <PieIcon className="w-4 h-4 text-blue-400" />
+          <h3 className="text-sm font-bold font-typewriter text-white uppercase">
             Operation Rescue Status Ratio
           </h3>
         </div>

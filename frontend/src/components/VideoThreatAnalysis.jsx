@@ -134,8 +134,8 @@ export default function VideoThreatAnalysis() {
       <div className="bg-slate-950/90 border border-amber-900/40 rounded-xl p-5 shadow-2xl backdrop-blur flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <Film className="w-5 h-5 text-amber-500" />
-            <h2 className="text-xl font-bold font-typewriter text-amber-300 uppercase tracking-wide">
+            <Film className="w-5 h-5 text-blue-400" />
+            <h2 className="text-xl font-bold font-typewriter text-white uppercase tracking-wide">
               Automated Video Threat Analysis & Gemini 2.0 Flash Verification
             </h2>
           </div>
@@ -145,7 +145,7 @@ export default function VideoThreatAnalysis() {
         </div>
 
         <div className="flex items-center space-x-2 text-xs">
-          <span className="px-3 py-1 bg-amber-950 text-amber-300 border border-amber-800 rounded font-bold">
+          <span className="px-3 py-1 bg-amber-950 text-white border border-amber-800 rounded font-bold">
             STAGE 1: HEURISTICS
           </span>
           <span className="text-slate-500">&rarr;</span>
@@ -159,8 +159,8 @@ export default function VideoThreatAnalysis() {
       {/* Upload Component */}
       <div className="bg-slate-950/90 border border-amber-900/40 rounded-xl p-5 shadow-2xl backdrop-blur">
         <form onSubmit={handleUploadSubmit} className="space-y-4">
-          <div className="text-sm font-bold font-typewriter text-amber-300 uppercase flex items-center space-x-2">
-            <UploadCloud className="w-4 h-4 text-amber-500" />
+          <div className="text-sm font-bold font-typewriter text-white uppercase flex items-center space-x-2">
+            <UploadCloud className="w-4 h-4 text-blue-400" />
             <span>Upload Reconnaissance / Drone Video Recording</span>
           </div>
 
@@ -172,10 +172,10 @@ export default function VideoThreatAnalysis() {
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
             <div className="flex flex-col items-center justify-center space-y-2">
-              <FileVideo className="w-8 h-8 text-amber-500 group-hover:scale-110 transition" />
+              <FileVideo className="w-8 h-8 text-blue-400 group-hover:scale-110 transition" />
               <div className="text-xs text-slate-300">
                 {fileToUpload ? (
-                  <span className="font-bold text-amber-300">{fileToUpload.name} ({(fileToUpload.size / (1024 * 1024)).toFixed(1)} MB)</span>
+                  <span className="font-bold text-white">{fileToUpload.name} ({(fileToUpload.size / (1024 * 1024)).toFixed(1)} MB)</span>
                 ) : (
                   <span>Drag & drop MP4, MOV, or AVI video file here, or click to browse</span>
                 )}
@@ -186,7 +186,7 @@ export default function VideoThreatAnalysis() {
 
           {uploading && (
             <div className="space-y-1">
-              <div className="flex justify-between text-xs text-amber-300">
+              <div className="flex justify-between text-xs text-white">
                 <span>Uploading video file and starting async Gemini 2.0 Flash analysis...</span>
                 <span>{uploadProgress}%</span>
               </div>
@@ -200,7 +200,7 @@ export default function VideoThreatAnalysis() {
             <button
               type="submit"
               disabled={!fileToUpload || uploading}
-              className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold font-typewriter rounded-lg shadow-lg shadow-amber-900/30 transition disabled:opacity-50 text-xs flex items-center space-x-2"
+              className="px-5 py-2.5 bg-blue-900 hover:bg-blue-800 text-white border border-blue-700 font-bold rounded-lg shadow-lg shadow-amber-900/30 transition disabled:opacity-50 text-xs flex items-center space-x-2"
             >
               <Sparkles className="w-4 h-4" />
               <span>START GEMINI 2.0 FLASH THREAT ANALYSIS</span>
@@ -212,14 +212,14 @@ export default function VideoThreatAnalysis() {
       {/* Video Jobs Gallery Grid */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <div className="text-sm font-bold font-typewriter text-amber-300 uppercase tracking-wide flex items-center space-x-2">
-            <Film className="w-4 h-4 text-amber-500" />
+          <div className="text-sm font-bold font-typewriter text-white uppercase tracking-wide flex items-center space-x-2">
+            <Film className="w-4 h-4 text-blue-400" />
             <span>Processed Video Jobs ({jobs.length})</span>
           </div>
 
           <button
             onClick={fetchJobs}
-            className="text-xs text-amber-400 hover:text-amber-200 flex items-center space-x-1 bg-slate-900 px-2.5 py-1 rounded border border-slate-800"
+            className="text-xs text-white hover:bg-blue-800 flex items-center space-x-1 bg-blue-950 px-3 py-1.5 rounded-lg border border-blue-700 transition"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>REFRESH LIST</span>
@@ -229,7 +229,7 @@ export default function VideoThreatAnalysis() {
         {jobs.length === 0 ? (
           <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-8 text-center text-slate-400 space-y-2">
             <FileVideo className="w-10 h-10 text-slate-600 mx-auto" />
-            <div className="font-typewriter text-amber-300 font-bold">No uploaded videos yet</div>
+            <div className="font-typewriter text-white font-bold">No uploaded videos yet</div>
             <p className="text-xs text-slate-500 max-w-md mx-auto">
               Upload an MP4/MOV/AVI video file using the panel above to start candidate detection and Gemini 2.0 Flash vision verification.
             </p>
@@ -242,13 +242,13 @@ export default function VideoThreatAnalysis() {
                 onClick={() => setSelectedJob(job)}
                 className={`p-4 rounded-xl border transition cursor-pointer flex flex-col justify-between space-y-3 ${
                   selectedJob?.video_id === job.video_id
-                    ? 'bg-amber-950/30 border-amber-500 shadow-xl shadow-amber-950/50'
+                    ? 'bg-blue-950/50 border-blue-600 shadow-xl shadow-blue-950/60'
                     : 'bg-slate-950/90 border-amber-900/40 hover:border-amber-700/60'
                 }`}
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="text-[10px] font-bold font-mono text-amber-500 uppercase">
+                    <span className="text-[10px] font-bold font-mono text-blue-400 uppercase">
                       {job.video_id}
                     </span>
                     <h4 className="text-sm font-bold font-typewriter text-slate-200 truncate max-w-[260px]">
@@ -257,7 +257,7 @@ export default function VideoThreatAnalysis() {
                   </div>
                   <span className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase ${
                     job.status === 'completed' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' :
-                    job.status === 'processing' ? 'bg-amber-950 text-amber-300 border border-amber-800 animate-pulse' :
+                    job.status === 'processing' ? 'bg-amber-950 text-white border border-amber-800 animate-pulse' :
                     'bg-slate-900 text-slate-400'
                   }`}>
                     {job.status}
@@ -266,7 +266,7 @@ export default function VideoThreatAnalysis() {
 
                 <div className="flex items-center justify-between text-xs font-mono text-slate-400 border-t border-slate-900 pt-2">
                   <div className="flex items-center space-x-1">
-                    <Clock className="w-3.5 h-3.5 text-amber-500" />
+                    <Clock className="w-3.5 h-3.5 text-blue-400" />
                     <span>{job.duration_sec ? `${job.duration_sec}s` : 'N/A'}</span>
                   </div>
 
@@ -287,16 +287,16 @@ export default function VideoThreatAnalysis() {
         <div className="bg-slate-950/95 border border-amber-900/60 rounded-xl p-5 shadow-2xl space-y-6 animate-in fade-in duration-300">
           <div className="flex items-center justify-between border-b border-amber-900/40 pb-3">
             <div>
-              <span className="text-[10px] font-bold font-mono text-amber-500 uppercase">
+              <span className="text-[10px] font-bold font-mono text-blue-400 uppercase">
                 CASE DOSSIER // {selectedJob.video_id}
               </span>
-              <h3 className="text-lg font-bold font-typewriter text-amber-200">
+              <h3 className="text-lg font-bold font-typewriter text-white">
                 {selectedJob.filename}
               </h3>
             </div>
             <button
               onClick={() => setSelectedJob(null)}
-              className="p-1 text-slate-400 hover:text-amber-300 rounded"
+              className="p-1 text-slate-400 hover:text-white rounded"
             >
               <XCircle className="w-5 h-5" />
             </button>
@@ -315,7 +315,7 @@ export default function VideoThreatAnalysis() {
 
             {/* Interactive Timeline Scrubber Markers */}
             <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800 space-y-2">
-              <div className="text-xs text-amber-400 font-bold uppercase flex items-center space-x-1.5">
+              <div className="text-xs text-blue-300 font-bold uppercase flex items-center space-x-1.5">
                 <Play className="w-3.5 h-3.5" />
                 <span>Verified Threat Timecode Markers (Click marker to seek video)</span>
               </div>
@@ -327,7 +327,7 @@ export default function VideoThreatAnalysis() {
                     <button
                       key={t.id}
                       onClick={() => handleJumpToTimecode(t.timestamp_sec)}
-                      className="px-3 py-1.5 rounded bg-red-950/80 hover:bg-red-900 text-red-200 border border-red-800 text-xs font-mono transition flex items-center space-x-1.5"
+                      className="px-3 py-1.5 rounded bg-blue-950 hover:bg-blue-900 text-white border border-blue-800 shadow text-xs font-mono transition flex items-center space-x-1.5"
                     >
                       <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
                       <span className="font-bold">{t.timecode}</span>
@@ -344,7 +344,7 @@ export default function VideoThreatAnalysis() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-900/30 pb-3">
               <div className="flex items-center space-x-2">
                 <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                <h4 className="text-md font-bold font-typewriter text-amber-300 uppercase">
+                <h4 className="text-md font-bold font-typewriter text-white uppercase">
                   Gemini 2.0 Flash Verified Threat Screenshots ({filteredThreats.length})
                 </h4>
               </div>
@@ -353,13 +353,13 @@ export default function VideoThreatAnalysis() {
               <div className="flex items-center space-x-1 bg-slate-900 p-1 rounded border border-slate-800 text-xs font-mono">
                 <button
                   onClick={() => setActiveThreatFilter('all')}
-                  className={`px-2.5 py-1 rounded ${activeThreatFilter === 'all' ? 'bg-amber-900/50 text-amber-200' : 'text-slate-400'}`}
+                  className={`px-2.5 py-1 rounded ${activeThreatFilter === 'all' ? 'bg-blue-900 text-white border border-blue-700 font-bold' : 'text-slate-400'}`}
                 >
                   ALL
                 </button>
                 <button
                   onClick={() => setActiveThreatFilter('unreviewed')}
-                  className={`px-2.5 py-1 rounded ${activeThreatFilter === 'unreviewed' ? 'bg-amber-900/50 text-amber-200' : 'text-slate-400'}`}
+                  className={`px-2.5 py-1 rounded ${activeThreatFilter === 'unreviewed' ? 'bg-blue-900 text-white border border-blue-700 font-bold' : 'text-slate-400'}`}
                 >
                   UNREVIEWED
                 </button>
@@ -379,12 +379,12 @@ export default function VideoThreatAnalysis() {
                   >
                     <div className="flex items-start justify-between">
                       <span className={`px-2.5 py-1 text-xs font-bold rounded uppercase ${
-                        isSubmerging ? 'bg-red-950 text-red-300 border border-red-800' : 'bg-amber-950 text-amber-300 border border-amber-800'
+                        isSubmerging ? 'bg-red-950 text-red-300 border border-red-800' : 'bg-amber-950 text-white border border-amber-800'
                       }`}>
                         {t.threat_type}
                       </span>
                       <span className="text-xs text-slate-400 font-mono">
-                        Timecode: <strong className="text-amber-300">{t.timecode}</strong>
+                        Timecode: <strong className="text-white">{t.timecode}</strong>
                       </span>
                     </div>
 
@@ -412,13 +412,13 @@ export default function VideoThreatAnalysis() {
                         <div className="flex items-center space-x-2 w-full justify-end">
                           <button
                             onClick={() => handleUpdateStatus(t.id, 'false_positive')}
-                            className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs transition"
+                            className="px-3 py-1.5 rounded bg-blue-950 hover:bg-blue-900 text-white border border-blue-800 text-xs transition"
                           >
                             FALSE POSITIVE
                           </button>
                           <button
                             onClick={() => handleUpdateStatus(t.id, 'reviewed')}
-                            className="px-3 py-1.5 rounded bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 text-xs transition font-bold"
+                            className="px-3 py-1.5 rounded bg-blue-900 hover:bg-blue-800 text-white border border-blue-700 shadow-md text-xs transition font-bold"
                           >
                             MARK REVIEWED
                           </button>

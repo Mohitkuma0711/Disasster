@@ -2,35 +2,50 @@
 
 @layer base {
   body {
-    font-family: 'Courier Prime', monospace;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #ffffff;
     background-color: #0b0f17;
     background-image: 
       radial-gradient(#1e293b 1px, transparent 1px),
       linear-gradient(to right, rgba(30, 41, 59, 0.15) 1px, transparent 1px),
       linear-gradient(to bottom, rgba(30, 41, 59, 0.15) 1px, transparent 1px);
     background-size: 24px 24px, 48px 48px, 48px 48px;
+    -webkit-font-smoothing: antialiased;
   }
 
-  h1, h2, h3, .font-typewriter {
-    font-family: 'Special Elite', cursive, monospace;
+  h1, h2, h3, h4, h5, h6, .font-typewriter {
+    font-family: 'Outfit', 'Inter', sans-serif !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    letter-spacing: -0.01em;
   }
 
-  .font-mono-tech {
-    font-family: 'Share Tech Mono', monospace;
+  .font-mono-tech, .font-mono {
+    font-family: 'Inter', monospace !important;
   }
+
+  p, span, label, td, th, div {
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+/* Ensure text readability - White primary text */
+.text-amber-100, .text-amber-200, .text-amber-300, .text-amber-400, .text-amber-500 {
+  color: #ffffff !important;
 }
 
 /* Custom leaflet marker popup styling for dark theme */
 .leaflet-popup-content-wrapper, .leaflet-popup-tip {
   background: #0f172a !important;
-  color: #fef3c7 !important;
-  border: 1px solid #78350f !important;
+  color: #ffffff !important;
+  border: 1px solid #1e3a8a !important;
   border-radius: 8px !important;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.8) !important;
 }
 
 .leaflet-popup-content {
-  font-family: 'Courier Prime', monospace !important;
+  font-family: 'Inter', sans-serif !important;
+  color: #ffffff !important;
   margin: 12px 14px !important;
 }
 
@@ -47,9 +62,9 @@
   background: #090d16;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #1e3a8a;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #d97706;
+  background: #2563eb;
 }

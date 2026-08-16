@@ -63,8 +63,8 @@ export default function PriorityQueue({ victims, onVictimSelect }) {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5 border-b border-amber-900/30 pb-4">
         <div>
-          <h2 className="text-xl font-bold font-typewriter text-amber-300 flex items-center gap-2 tracking-wide uppercase">
-            <ShieldAlert className="w-5 h-5 text-amber-500" />
+          <h2 className="text-xl font-bold font-typewriter text-white flex items-center gap-2 tracking-wide uppercase">
+            <ShieldAlert className="w-5 h-5 text-blue-400" />
             Tactical Priority Log & Dispatch Queue
           </h2>
           <p className="text-xs text-slate-400 font-mono mt-1">
@@ -77,7 +77,7 @@ export default function PriorityQueue({ victims, onVictimSelect }) {
           <button
             onClick={() => setStatusFilter('all')}
             className={`px-3 py-1.5 rounded-md transition ${
-              statusFilter === 'all' ? 'bg-amber-900/40 text-amber-200 border border-amber-700/50' : 'text-slate-400 hover:text-slate-200'
+              statusFilter === 'all' ? 'bg-amber-900/40 text-white border border-amber-700/50' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             ALL ({victims.length})
@@ -85,7 +85,7 @@ export default function PriorityQueue({ victims, onVictimSelect }) {
           <button
             onClick={() => setStatusFilter('active')}
             className={`px-3 py-1.5 rounded-md transition ${
-              statusFilter === 'active' ? 'bg-amber-900/40 text-amber-200 border border-amber-700/50' : 'text-slate-400 hover:text-slate-200'
+              statusFilter === 'active' ? 'bg-amber-900/40 text-white border border-amber-700/50' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             ACTIVE UNHANDLED ({victims.filter(v => v.status !== 'rescued').length})
@@ -105,21 +105,21 @@ export default function PriorityQueue({ victims, onVictimSelect }) {
       <div className="overflow-x-auto border border-slate-800 rounded-lg">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-900/80 text-amber-400 font-mono text-xs uppercase border-b border-amber-900/40">
-              <th className="py-3 px-4 cursor-pointer hover:text-amber-200" onClick={() => toggleSort('track_id')}>
+            <tr className="bg-slate-900/80 text-blue-300 font-mono text-xs uppercase border-b border-amber-900/40">
+              <th className="py-3 px-4 cursor-pointer hover:text-white" onClick={() => toggleSort('track_id')}>
                 <div className="flex items-center space-x-1">
                   <span>CASE ID</span>
                   <ArrowUpDown className="w-3.5 h-3.5 opacity-60" />
                 </div>
               </th>
-              <th className="py-3 px-4 cursor-pointer hover:text-amber-200" onClick={() => toggleSort('priority_score')}>
+              <th className="py-3 px-4 cursor-pointer hover:text-white" onClick={() => toggleSort('priority_score')}>
                 <div className="flex items-center space-x-1">
                   <span>PRIORITY SCORE</span>
                   <ArrowUpDown className="w-3.5 h-3.5 opacity-60" />
                 </div>
               </th>
               <th className="py-3 px-4">LOCATION COORDS</th>
-              <th className="py-3 px-4 cursor-pointer hover:text-amber-200" onClick={() => toggleSort('confidence')}>
+              <th className="py-3 px-4 cursor-pointer hover:text-white" onClick={() => toggleSort('confidence')}>
                 <div className="flex items-center space-x-1">
                   <span>CONFIDENCE</span>
                   <ArrowUpDown className="w-3.5 h-3.5 opacity-60" />
@@ -149,7 +149,7 @@ export default function PriorityQueue({ victims, onVictimSelect }) {
                     className="hover:bg-amber-950/20 transition cursor-pointer group"
                   >
                     {/* Case ID */}
-                    <td className="py-3 px-4 font-typewriter text-amber-200 font-bold group-hover:text-amber-300">
+                    <td className="py-3 px-4 font-typewriter text-white font-bold group-hover:text-white">
                       #{v.track_id ? `TRK-${v.track_id}` : v.id?.slice(0, 8).toUpperCase()}
                     </td>
 
@@ -161,7 +161,7 @@ export default function PriorityQueue({ victims, onVictimSelect }) {
                           : score > 70
                           ? 'bg-red-950 text-red-300 border border-red-800 animate-pulse'
                           : score >= 40
-                          ? 'bg-amber-950 text-amber-300 border border-amber-800'
+                          ? 'bg-amber-950 text-white border border-amber-800'
                           : 'bg-yellow-950 text-yellow-300 border border-yellow-800'
                       }`}>
                         {Math.round(score)} / 100
@@ -170,7 +170,7 @@ export default function PriorityQueue({ victims, onVictimSelect }) {
 
                     {/* Coordinates */}
                     <td className="py-3 px-4 text-slate-300 flex items-center space-x-1">
-                      <MapPin className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                      <MapPin className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
                       <span>
                         {Number(v.lat || (v.coordinates && v.coordinates[0]) || 0).toFixed(4)},{' '}
                         {Number(v.lng || (v.coordinates && v.coordinates[1]) || 0).toFixed(4)}
@@ -210,7 +210,7 @@ export default function PriorityQueue({ victims, onVictimSelect }) {
                           <span>RESCUED</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center space-x-1 text-amber-300 text-[11px]">
+                        <span className="inline-flex items-center space-x-1 text-white text-[11px]">
                           <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
                           <span>UNHANDLED</span>
                         </span>

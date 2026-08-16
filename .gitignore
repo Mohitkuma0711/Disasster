@@ -47,3 +47,9 @@ dist-ssr/
 *.swp
 *.swo
 .DS_Store
+
+# Temporary directories and root test files
+Disasster/
+disaster_updated/
+index.html
+style.css

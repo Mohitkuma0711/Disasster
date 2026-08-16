@@ -88,8 +88,8 @@ export default function ReportForm({ onReportSubmitted }) {
   return (
     <div className="w-full bg-slate-950/90 rounded-xl border border-amber-900/40 p-5 shadow-2xl backdrop-blur">
       <div className="border-b border-amber-900/30 pb-3 mb-4">
-        <h2 className="text-lg font-bold font-typewriter text-amber-300 flex items-center gap-2 uppercase tracking-wide">
-          <MapPin className="w-5 h-5 text-amber-500" />
+        <h2 className="text-lg font-bold font-typewriter text-white flex items-center gap-2 uppercase tracking-wide">
+          <MapPin className="w-5 h-5 text-blue-400" />
           Field Incident Report Form (Dispatch Entry)
         </h2>
         <p className="text-xs text-slate-400 font-mono mt-1">
@@ -101,7 +101,7 @@ export default function ReportForm({ onReportSubmitted }) {
         <div className={`mb-4 p-3 rounded text-xs font-mono flex items-center space-x-2 border ${
           statusMessage.type === 'success' ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800' :
           statusMessage.type === 'error' ? 'bg-red-950/80 text-red-300 border-red-800' :
-          'bg-amber-950/80 text-amber-300 border-amber-800'
+          'bg-amber-950/80 text-white border-amber-800'
         }`}>
           {statusMessage.type === 'success' ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
           <span>{statusMessage.text}</span>
@@ -112,7 +112,7 @@ export default function ReportForm({ onReportSubmitted }) {
         {/* Lat / Lng */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label className="block text-amber-400 mb-1">LATITUDE</label>
+            <label className="block text-blue-300 mb-1">LATITUDE</label>
             <input
               type="number"
               step="any"
@@ -124,11 +124,11 @@ export default function ReportForm({ onReportSubmitted }) {
           </div>
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-amber-400">LONGITUDE</label>
+              <label className="text-blue-300">LONGITUDE</label>
               <button
                 type="button"
                 onClick={handleGetLocation}
-                className="text-[11px] text-amber-400 hover:text-amber-200 flex items-center space-x-1"
+                className="text-[11px] text-blue-300 hover:text-white flex items-center space-x-1"
               >
                 <Crosshair className="w-3 h-3" />
                 <span>GET GPS</span>
@@ -147,7 +147,7 @@ export default function ReportForm({ onReportSubmitted }) {
 
         {/* Description */}
         <div>
-          <label className="block text-amber-400 mb-1">INCIDENT OBSERVATION DETAILS</label>
+          <label className="block text-blue-300 mb-1">INCIDENT OBSERVATION DETAILS</label>
           <textarea
             rows={3}
             required
@@ -160,7 +160,7 @@ export default function ReportForm({ onReportSubmitted }) {
 
         {/* Photo Upload */}
         <div>
-          <label className="block text-amber-400 mb-1">ATTACHMENT / EVIDENCE PHOTO</label>
+          <label className="block text-blue-300 mb-1">ATTACHMENT / EVIDENCE PHOTO</label>
           <div className="relative border border-dashed border-slate-700 rounded-lg p-3 text-center bg-slate-900/50 hover:border-amber-500/50 transition">
             <input
               type="file"
@@ -169,7 +169,7 @@ export default function ReportForm({ onReportSubmitted }) {
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
             <div className="flex items-center justify-center space-x-2 text-slate-400">
-              <Upload className="w-4 h-4 text-amber-500" />
+              <Upload className="w-4 h-4 text-blue-400" />
               <span>{photo ? photo.name : 'Click or drop aerial/ground image file here'}</span>
             </div>
           </div>
