@@ -3,7 +3,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { CheckCircle2, ArrowUpDown, MapPin, Activity, ShieldAlert, UserCheck } from 'lucide-react';
 
-export default function PriorityQueue({ victims, onVictimSelect }) {
+export default function PriorityQueue({ victims, onVictimSelect, onVictimRescued }) {
   const [sortField, setSortField] = useState('priority_score');
   const [sortAsc, setSortAsc] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -13,19 +13,18 @@ export default function PriorityQueue({ victims, onVictimSelect }) {
   const handleMarkRescued = async (e, victimId) => {
     e.stopPropagation();
     setUpdatingId(victimId);
+    const rescuedAt = new Date().toISOString();
     try {
       const victimRef = doc(db, 'victims', victimId);
       await updateDoc(victimRef, {
         status: 'rescued',
-        rescuedAt: new Date().toISOString(),
+        rescuedAt,
       });
+      onVictimRescued?.(victimId, rescuedAt);
     } catch (err) {
-      console.warn("Firestore update error (updating local state):", err);
-      // Fallback if offline/demo
-      if (victimId) {
-        const target = victims.find(v => v.id === victimId);
-        if (target) target.status = 'rescued';
-      }
+      console.warn("Firestore update error; rescue was saved locally for this session:", err);
+      // Keep the demo/offline interface functional when Firestore is unavailable.
+      onVictimRescued?.(victimId, rescuedAt);
     } finally {
       setUpdatingId(null);
     }

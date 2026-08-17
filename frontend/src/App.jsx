@@ -104,6 +104,19 @@ export default function App() {
     setVictims(prev => [newVictim, ...prev]);
   };
 
+  const handleVictimRescued = (victimId, rescuedAt) => {
+    setVictims(prev => prev.map(victim => (
+      victim.id === victimId
+        ? { ...victim, status: 'rescued', rescuedAt }
+        : victim
+    )));
+    setSelectedVictim(prev => (
+      prev?.id === victimId
+        ? { ...prev, status: 'rescued', rescuedAt }
+        : prev
+    ));
+  };
+
   return (
     <div className="min-h-screen bg-[#070a10] text-white font-mono pb-12">
       {/* Top Tactical Command Header */}
@@ -191,7 +204,11 @@ export default function App() {
             <AnalyticsCharts victims={victims} />
 
             {/* Priority Queue Log Table */}
-            <PriorityQueue victims={victims} onVictimSelect={setSelectedVictim} />
+            <PriorityQueue
+              victims={victims}
+              onVictimSelect={setSelectedVictim}
+              onVictimRescued={handleVictimRescued}
+            />
           </>
         )}
 
