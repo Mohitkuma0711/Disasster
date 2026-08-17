@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Globe from 'react-globe.gl';
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
-import { Globe as GlobeIcon, ShieldAlert, History, TrendingUp, Layers, X, Info, Flame, CloudRain, Zap, Wind } from 'lucide-react';
+import { Globe as GlobeIcon, ShieldAlert, History, TrendingUp, Layers, X, Info, Flame, CloudRain, Zap, Wind, MapPin, LoaderCircle } from 'lucide-react';
 
 // Fallback GeoJSON boundaries for India & World when offline
 const INDIA_GEOJSON_URL = "https://raw.githubusercontent.com/subhash-chandra/india-states-geojson/master/india_states.geojson";
 const WORLD_GEOJSON_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 // Fallback local dataset for immediate offline rendering
 const FALLBACK_CLIMATE_DATA = {
@@ -88,6 +89,8 @@ export default function ClimateRiskModule() {
   const [geoJsonData, setGeoJsonData] = useState(null);
   const [climateData] = useState(FALLBACK_CLIMATE_DATA);
   const [loadingGeoJson, setLoadingGeoJson] = useState(true);
+  const [cityAssessment, setCityAssessment] = useState(null);
+  const [isAssessingCity, setIsAssessingCity] = useState(false);
 
   // Fetch GeoJSON polygons based on active layer
   useEffect(() => {
@@ -141,6 +144,33 @@ export default function ClimateRiskModule() {
     setSelectedRegion(regionInfo);
   };
 
+  const assessCityRisk = async ({ lat, lng }) => {
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+    setIsAssessingCity(true);
+    setCityAssessment({ location_name: `Selected location (${lat.toFixed(3)}, ${lng.toFixed(3)})`, latitude: lat, longitude: lng });
+    try {
+      const response = await fetch(`${API_BASE_URL}/climate-risk-assessment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latitude: lat, longitude: lng }),
+      });
+      if (!response.ok) throw new Error('Assessment request failed');
+      const assessment = await response.json();
+      setCityAssessment({ ...assessment, latitude: lat, longitude: lng });
+    } catch {
+      setCityAssessment({
+        location_name: `Selected location (${lat.toFixed(3)}, ${lng.toFixed(3)})`, latitude: lat, longitude: lng,
+        risk_level: 'UNAVAILABLE',
+        summary: 'The local assessment API is not reachable. Start the backend and configure GEMINI_API_KEY in backend/.env to generate a city-level historical risk assessment.',
+        top_hazards: [], historical_signals: [], preparedness: [], source: 'local client',
+        disclaimer: 'This tool is not a real-time warning system.',
+      });
+    } finally {
+      setIsAssessingCity(false);
+    }
+  };
+
   // Get color by risk score
   const getPolygonColor = (polygon) => {
     const properties = polygon.properties || {};
@@ -178,7 +208,7 @@ export default function ClimateRiskModule() {
               3D Climate Risk & Disaster Vulnerability Intelligence
             </h2>
             <p className="text-xs text-slate-400">
-              Interactive GeoJSON Risk Assessment powered by EM-DAT & NDMA Archives.
+              Click any location for a Gemini historical hazard assessment; click a region for its archive profile.
             </p>
           </div>
         </div>
@@ -241,8 +271,38 @@ export default function ClimateRiskModule() {
             </div>
           `}
           onPolygonClick={handlePolygonClick}
+          onGlobeClick={assessCityRisk}
         />
       </div>
+
+      {cityAssessment && (
+        <div className="absolute left-4 bottom-4 w-full max-w-md z-[150] bg-slate-950/95 border border-cyan-900/60 rounded-xl p-4 shadow-2xl backdrop-blur overflow-y-auto max-h-[calc(100%-6rem)] animate-in slide-in-from-left duration-300">
+          <div className="flex items-start justify-between border-b border-cyan-900/40 pb-3 mb-3">
+            <div>
+              <span className="text-[10px] font-bold text-cyan-300 uppercase tracking-widest">City hazard assessment</span>
+              <h3 className="text-lg font-bold text-white flex items-center gap-2"><MapPin className="w-4 h-4 text-cyan-300" />{cityAssessment.location_name}</h3>
+              <p className="text-[10px] text-slate-400 mt-1">{cityAssessment.latitude?.toFixed(3)}, {cityAssessment.longitude?.toFixed(3)}</p>
+            </div>
+            <button onClick={() => setCityAssessment(null)} className="p-1 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+          </div>
+
+          {isAssessingCity ? (
+            <div className="py-8 text-center text-cyan-200 text-sm flex flex-col items-center gap-2"><LoaderCircle className="w-6 h-6 animate-spin" />Analyzing historical hazard context with Gemini…</div>
+          ) : (
+            <div className="space-y-3 text-xs">
+              <div className="flex items-center justify-between bg-slate-900/80 border border-slate-800 rounded p-3">
+                <span className="text-slate-400">HISTORICAL RISK</span>
+                <span className="font-bold text-amber-300">{cityAssessment.risk_level}{cityAssessment.risk_score != null ? ` · ${cityAssessment.risk_score}/100` : ''}</span>
+              </div>
+              <p className="text-slate-200 leading-relaxed">{cityAssessment.summary}</p>
+              {cityAssessment.top_hazards?.length > 0 && <div><div className="text-cyan-300 font-bold uppercase text-[10px] mb-1">Likely hazards</div>{cityAssessment.top_hazards.map((hazard, index) => <div key={`${hazard.type}-${index}`} className="py-2 border-b border-slate-800"><span className="text-white font-bold">{hazard.type} · {hazard.risk}</span><p className="text-slate-400 mt-0.5">{hazard.reason}</p></div>)}</div>}
+              {cityAssessment.historical_signals?.length > 0 && <div><div className="text-cyan-300 font-bold uppercase text-[10px] mb-1">Historical signals</div><ul className="list-disc pl-4 space-y-1 text-slate-300">{cityAssessment.historical_signals.map((signal, index) => <li key={index}>{signal}</li>)}</ul></div>}
+              {cityAssessment.preparedness?.length > 0 && <div><div className="text-cyan-300 font-bold uppercase text-[10px] mb-1">Preparedness</div><ul className="list-disc pl-4 space-y-1 text-slate-300">{cityAssessment.preparedness.map((item, index) => <li key={index}>{item}</li>)}</ul></div>}
+              <p className="border-t border-slate-800 pt-2 text-[10px] text-slate-500">Source: {cityAssessment.source}. {cityAssessment.disclaimer}</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Interactive Side Panel when a region is clicked */}
       {selectedRegion && (

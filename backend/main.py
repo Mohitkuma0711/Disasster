@@ -2,6 +2,7 @@ import os
 import uuid
 import json
 import shutil
+import re
 from datetime import datetime
 from typing import Optional, List
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, BackgroundTasks, HTTPException
@@ -9,6 +10,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from video_processor import VideoThreatProcessor, datetime_to_iso
+
+try:
+    import google.generativeai as genai
+except ImportError:
+    genai = None
 
 # Initialize FastAPI application
 app = FastAPI(title="Disaster Victim Detection & Video Threat Intelligence API")
@@ -36,11 +42,85 @@ REJECTED_CANDIDATES_DB = {}
 processor = VideoThreatProcessor(model_name="yolov8n.pt", sample_fps=2.0)
 
 
+def _local_climate_assessment(latitude: float, longitude: float) -> dict:
+    """Useful local response when Gemini is not configured."""
+    return {
+        "location_name": f"Selected location ({latitude:.3f}, {longitude:.3f})",
+        "risk_level": "UNKNOWN",
+        "risk_score": None,
+        "summary": "Gemini is not configured, so a city-specific historical assessment cannot be generated.",
+        "top_hazards": [],
+        "historical_signals": [],
+        "preparedness": ["Configure GEMINI_API_KEY in backend/.env and restart the API."],
+        "source": "local fallback",
+        "disclaimer": "This tool is not a real-time warning system. Follow official disaster-management and weather agencies for active alerts.",
+    }
+
+
+def _parse_gemini_json(text: str) -> dict:
+    """Accept JSON responses even when a model wraps them in a Markdown fence."""
+    cleaned = re.sub(r"^```(?:json)?\\s*|\\s*```$", "", text.strip(), flags=re.IGNORECASE)
+    return json.loads(cleaned)
+
+
 # ─── 1. Health Endpoint ───────────────────────────────────────────────────────
 
 @app.get("/health")
 def health_check():
     return {"status": "ok", "service": "Disaster Victim Detection API"}
+
+
+@app.post("/climate-risk-assessment")
+def climate_risk_assessment(location: dict):
+    """Generate a historical, city-level hazard assessment from a globe coordinate."""
+    try:
+        latitude = float(location["latitude"])
+        longitude = float(location["longitude"])
+    except (KeyError, TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="latitude and longitude are required numbers")
+
+    if not -90 <= latitude <= 90 or not -180 <= longitude <= 180:
+        raise HTTPException(status_code=422, detail="Coordinates are outside valid geographic bounds")
+
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    if not genai or not gemini_key or gemini_key.startswith("AIzaSy_your_actual"):
+        return _local_climate_assessment(latitude, longitude)
+
+    prompt = f"""
+You are a disaster-risk research assistant. Assess the location at latitude {latitude:.5f}, longitude {longitude:.5f}.
+Identify the nearest city or locality, then provide a cautious historical natural-hazard assessment based on broadly documented patterns and geographic context. Do not claim live weather, active alerts, certainty, or access to databases. If you are uncertain about a historical fact, describe it as a general pattern rather than inventing a precise event.
+
+Return only valid JSON with this exact shape:
+{{
+  "location_name": "City, region, country",
+  "risk_level": "LOW|MODERATE|HIGH|VERY HIGH|UNKNOWN",
+  "risk_score": 0,
+  "summary": "2-3 sentence historical risk assessment",
+  "top_hazards": [{{"type": "Flood", "risk": "High", "reason": "brief geographic or historical reason"}}],
+  "historical_signals": ["short, cautious historical pattern or event"],
+  "preparedness": ["practical preparedness action"],
+  "source": "Gemini historical-context assessment",
+  "disclaimer": "Historical-context estimate only; not a live warning or official forecast."
+}}
+Use an integer risk_score from 0 to 100, and include 2-4 top_hazards and 2-4 preparedness actions.
+"""
+
+    try:
+        genai.configure(api_key=gemini_key)
+        model = genai.GenerativeModel("gemini-2.0-flash")
+        response = model.generate_content(
+            prompt,
+            generation_config={"temperature": 0.2, "response_mime_type": "application/json"},
+        )
+        assessment = _parse_gemini_json(response.text)
+        assessment["source"] = assessment.get("source") or "Gemini historical-context assessment"
+        assessment["disclaimer"] = assessment.get("disclaimer") or "Historical-context estimate only; not a live warning or official forecast."
+        return assessment
+    except Exception as exc:
+        print(f"[!] Gemini climate-risk assessment failed: {exc}")
+        fallback = _local_climate_assessment(latitude, longitude)
+        fallback["summary"] = "Gemini could not return an assessment for this location. Check the API key, quota, and backend logs."
+        return fallback
 
 
 # ─── 2. WebSocket Route ───────────────────────────────────────────────────────
