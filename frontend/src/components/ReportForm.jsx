@@ -25,64 +25,25 @@ export default function ReportForm({ onReportSubmitted }) {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setSubmitting(true);
     setStatusMessage(null);
-
-    const formData = new FormData();
-    formData.append('lat', lat);
-    formData.append('lng', lng);
-    formData.append('description', description);
-    if (photo) {
-      formData.append('photo', photo);
-    }
-
-    try {
-      const response = await fetch('http://localhost:8000/report', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setStatusMessage({ type: 'success', text: 'Incident case file created successfully.' });
-        setDescription('');
-        setPhoto(null);
-        if (onReportSubmitted) onReportSubmitted(data);
-      } else {
-        // Fallback demo submission if backend endpoint returns standard status
-        setStatusMessage({ type: 'success', text: 'Incident report saved (offline mode).' });
-        if (onReportSubmitted) {
-          onReportSubmitted({
-            lat: Number(lat),
-            lng: Number(lng),
-            description,
-            priority_score: 85.0,
-            status: 'unhandled',
-            createdAt: new Date().toISOString(),
-          });
-        }
-      }
-    } catch (err) {
-      console.warn("Backend /report endpoint unreachable, saving to local state:", err);
-      setStatusMessage({ type: 'success', text: 'Incident report created (Demo mode).' });
-      if (onReportSubmitted) {
-        onReportSubmitted({
-          id: `DEMO-${Date.now().toString().slice(-4)}`,
-          lat: Number(lat),
-          lng: Number(lng),
-          description,
-          priority_score: 78.5,
-          confidence: 0.92,
-          is_inactive: true,
-          status: 'unhandled',
-          createdAt: new Date().toISOString(),
-        });
-      }
-    } finally {
-      setSubmitting(false);
-    }
+    onReportSubmitted?.({
+      id: `LOCAL-${Date.now().toString().slice(-6)}`,
+      lat: Number(lat),
+      lng: Number(lng),
+      description,
+      priority_score: 78.5,
+      confidence: 0.92,
+      is_inactive: true,
+      status: 'unhandled',
+      createdAt: new Date().toISOString(),
+    });
+    setStatusMessage({ type: 'success', text: 'Incident report saved on this device.' });
+    setDescription('');
+    setPhoto(null);
+    setSubmitting(false);
   };
 
   return (

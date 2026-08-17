@@ -7,8 +7,8 @@ import AnalyticsCharts from './components/AnalyticsCharts';
 import ClimateRiskModule from './components/ClimateRiskModule';
 import VideoThreatAnalysis from './components/VideoThreatAnalysis';
 import { Shield, Radio, Cpu, Database, MapPin, Globe as GlobeIcon, Film } from 'lucide-react';
-import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from './firebase';
+
+const LOCAL_VICTIMS_KEY = 'disaster-rescue-project:victims';
 
 const INITIAL_DEMO_VICTIMS = [
   {
@@ -74,31 +74,24 @@ const INITIAL_DEMO_VICTIMS = [
 ];
 
 export default function App() {
-  const [victims, setVictims] = useState(INITIAL_DEMO_VICTIMS);
+  const [victims, setVictims] = useState(() => {
+    try {
+      const savedVictims = localStorage.getItem(LOCAL_VICTIMS_KEY);
+      return savedVictims ? JSON.parse(savedVictims) : INITIAL_DEMO_VICTIMS;
+    } catch {
+      return INITIAL_DEMO_VICTIMS;
+    }
+  });
   const [selectedVictim, setSelectedVictim] = useState(null);
   const [currentModule, setCurrentModule] = useState('victim-triage'); // 'victim-triage', 'climate-risk', or 'video-analysis'
 
-  // Firestore real-time listener
   useEffect(() => {
-    let unsubscribe = () => {};
     try {
-      const victimsRef = collection(db, 'victims');
-      unsubscribe = onSnapshot(victimsRef, (snapshot) => {
-        if (!snapshot.empty) {
-          const docs = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          setVictims(docs);
-        }
-      }, (err) => {
-        console.warn("Firestore snapshot fallback to demo dataset:", err);
-      });
-    } catch (e) {
-      console.warn("Firebase offline or not configured:", e);
+      localStorage.setItem(LOCAL_VICTIMS_KEY, JSON.stringify(victims));
+    } catch {
+      // The queue continues to work for the current session if storage is unavailable.
     }
-    return () => unsubscribe();
-  }, []);
+  }, [victims]);
 
   const handleReportSubmitted = (newVictim) => {
     setVictims(prev => [newVictim, ...prev]);

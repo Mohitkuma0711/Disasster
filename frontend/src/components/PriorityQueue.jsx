@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
 import { CheckCircle2, ArrowUpDown, MapPin, Activity, ShieldAlert, UserCheck } from 'lucide-react';
 
 export default function PriorityQueue({ victims, onVictimSelect, onVictimRescued }) {
@@ -9,25 +7,12 @@ export default function PriorityQueue({ victims, onVictimSelect, onVictimRescued
   const [statusFilter, setStatusFilter] = useState('all');
   const [updatingId, setUpdatingId] = useState(null);
 
-  // Handle Mark Rescued in Firestore
-  const handleMarkRescued = async (e, victimId) => {
+  const handleMarkRescued = (e, victimId) => {
     e.stopPropagation();
     setUpdatingId(victimId);
     const rescuedAt = new Date().toISOString();
-    try {
-      const victimRef = doc(db, 'victims', victimId);
-      await updateDoc(victimRef, {
-        status: 'rescued',
-        rescuedAt,
-      });
-      onVictimRescued?.(victimId, rescuedAt);
-    } catch (err) {
-      console.warn("Firestore update error; rescue was saved locally for this session:", err);
-      // Keep the demo/offline interface functional when Firestore is unavailable.
-      onVictimRescued?.(victimId, rescuedAt);
-    } finally {
-      setUpdatingId(null);
-    }
+    onVictimRescued?.(victimId, rescuedAt);
+    setUpdatingId(null);
   };
 
   // Filter & Sort Victims

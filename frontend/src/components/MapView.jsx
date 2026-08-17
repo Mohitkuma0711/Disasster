@@ -1,7 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
-import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
 import L from 'leaflet';
 import { ShieldAlert, AlertTriangle, CheckCircle, Navigation } from 'lucide-react';
 
@@ -45,41 +43,8 @@ const createMarkerIcon = (priorityScore, isRescued) => {
   });
 };
 
-export default function MapView({ victims: propVictims, onSelectVictim }) {
-  const [victims, setVictims] = useState(propVictims || []);
-  const [center, setCenter] = useState([28.6139, 77.2090]); // Default Delhi coordinates or center of detections
-
-  useEffect(() => {
-    // Real-time listener for "victims" Firestore collection
-    let unsubscribe = () => {};
-    try {
-      const victimsRef = collection(db, 'victims');
-      unsubscribe = onSnapshot(victimsRef, (snapshot) => {
-        const docs = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setVictims(docs);
-
-        // Adjust map center if valid victim coordinates exist
-        const validCoords = docs.filter(v => v.lat && v.lng);
-        if (validCoords.length > 0) {
-          const avgLat = validCoords.reduce((acc, v) => acc + Number(v.lat), 0) / validCoords.length;
-          const avgLng = validCoords.reduce((acc, v) => acc + Number(v.lng), 0) / validCoords.length;
-          setCenter([avgLat, avgLng]);
-        }
-      }, (err) => {
-        console.warn("Firestore snapshot error (using fallback state):", err);
-      });
-    } catch (e) {
-      console.warn("Firebase not configured yet or connection offline:", e);
-    }
-
-    return () => unsubscribe();
-  }, []);
-
-  // Use props if passed, otherwise state
-  const displayVictims = propVictims && propVictims.length > 0 ? propVictims : victims;
+export default function MapView({ victims = [], onSelectVictim }) {
+  const [center] = useState([28.6139, 77.2090]); // Default Delhi coordinates or center of detections
 
   return (
     <div className="relative w-full h-[520px] rounded-xl overflow-hidden border border-amber-900/40 bg-slate-950 shadow-2xl shadow-black/90">
@@ -125,7 +90,7 @@ export default function MapView({ victims: propVictims, onSelectVictim }) {
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
 
-        {displayVictims.map((victim) => {
+        {victims.map((victim) => {
           const lat = Number(victim.lat || (victim.coordinates && victim.coordinates[0]) || 28.6139);
           const lng = Number(victim.lng || (victim.coordinates && victim.coordinates[1]) || 77.2090);
           const score = Number(victim.priority_score || 0);

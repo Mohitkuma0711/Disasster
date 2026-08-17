@@ -2,8 +2,6 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Globe from 'react-globe.gl';
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 import { Globe as GlobeIcon, ShieldAlert, History, TrendingUp, Layers, X, Info, Flame, CloudRain, Zap, Wind } from 'lucide-react';
-import { collection, getDocs, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
 
 // Fallback GeoJSON boundaries for India & World when offline
 const INDIA_GEOJSON_URL = "https://raw.githubusercontent.com/subhash-chandra/india-states-geojson/master/india_states.geojson";
@@ -88,34 +86,8 @@ export default function ClimateRiskModule() {
   const [selectedRegion, setSelectedRegion] = useState(null);
   const [activeTab, setActiveTab] = useState('forecast'); // 'forecast' or 'history'
   const [geoJsonData, setGeoJsonData] = useState(null);
-  const [climateData, setClimateData] = useState(FALLBACK_CLIMATE_DATA);
+  const [climateData] = useState(FALLBACK_CLIMATE_DATA);
   const [loadingGeoJson, setLoadingGeoJson] = useState(true);
-
-  // Fetch Firestore climate risk data
-  useEffect(() => {
-    async function fetchClimateRiskData() {
-      try {
-        const indiaSnap = await getDocs(collection(db, 'region_climate_data_india'));
-        const globalSnap = await getDocs(collection(db, 'region_climate_data_global'));
-
-        const indiaDocs = {};
-        indiaSnap.forEach(d => { indiaDocs[d.id.toLowerCase()] = d.data(); });
-
-        const globalDocs = {};
-        globalSnap.forEach(d => { globalDocs[d.id.toLowerCase()] = d.data(); });
-
-        if (Object.keys(indiaDocs).length > 0 || Object.keys(globalDocs).length > 0) {
-          setClimateData({
-            india: { ...FALLBACK_CLIMATE_DATA.india, ...indiaDocs },
-            global: { ...FALLBACK_CLIMATE_DATA.global, ...globalDocs }
-          });
-        }
-      } catch (err) {
-        console.warn("Firestore fetch offline, using fallback dataset:", err);
-      }
-    }
-    fetchClimateRiskData();
-  }, []);
 
   // Fetch GeoJSON polygons based on active layer
   useEffect(() => {

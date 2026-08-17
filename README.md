@@ -65,7 +65,6 @@ disaster-victim-detection/
 │   │   │   ├── AnalyticsCharts.jsx      # Recharts triage spectrum & status charts
 │   │   │   ├── ClimateRiskModule.jsx    # 3D Globe with GeoJSON, Radar chart, & history
 │   │   │   └── VideoThreatAnalysis.jsx # Two-stage video upload, scrubber, & AI verification
-│   │   ├── firebase.js                  # Firebase client configuration
 │   │   ├── App.jsx                      # Main dashboard navigation & layout
 │   │   ├── index.css                    # Tailwind CSS & custom evidence-board textures
 │   │   └── main.jsx

@@ -51,7 +51,7 @@ export default function ChatbotWidget({ victims = [] }) {
     }
 
     if (q.includes('report') || q.includes('submit') || q.includes('field')) {
-      return `📝 Field Incident Submission:\nClick "Submit Field Incident Report" on the main dashboard to broadcast ground GPS coordinates, hazard category, and structural damage level directly into Firestore.`;
+      return `📝 Field Incident Submission:\nClick "Submit Field Incident Report" on the main dashboard to save ground GPS coordinates, hazard category, and structural damage details on this device.`;
     }
 
     if (q.includes('climate') || q.includes('globe') || q.includes('risk')) {
