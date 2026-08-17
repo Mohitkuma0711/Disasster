@@ -90,6 +90,7 @@ export default function ClimateRiskModule() {
   const [climateData] = useState(FALLBACK_CLIMATE_DATA);
   const [loadingGeoJson, setLoadingGeoJson] = useState(true);
   const [cityAssessment, setCityAssessment] = useState(null);
+  const [cityPin, setCityPin] = useState(null);
   const [isAssessingCity, setIsAssessingCity] = useState(false);
   const [cityQuery, setCityQuery] = useState('');
   const [isSearchingCity, setIsSearchingCity] = useState(false);
@@ -160,7 +161,16 @@ export default function ClimateRiskModule() {
       });
       if (!response.ok) throw new Error('Assessment request failed');
       const assessment = await response.json();
-      setCityAssessment({ ...assessment, latitude: lat, longitude: lng });
+      const result = { ...assessment, latitude: lat, longitude: lng };
+      setCityAssessment(result);
+      const riskScore = result.risk_score == null ? NaN : Number(result.risk_score);
+      setCityPin({
+        name: result.location_name || `Selected location (${lat.toFixed(3)}, ${lng.toFixed(3)})`,
+        lat,
+        lng,
+        riskScore,
+        riskLevel: result.risk_level || 'UNKNOWN',
+      });
     } catch {
       setCityAssessment({
         location_name: `Selected location (${lat.toFixed(3)}, ${lng.toFixed(3)})`, latitude: lat, longitude: lng,
@@ -169,6 +179,7 @@ export default function ClimateRiskModule() {
         top_hazards: [], historical_signals: [], preparedness: [], source: 'local client',
         disclaimer: 'This tool is not a real-time warning system.',
       });
+      setCityPin({ name: `Selected location (${lat.toFixed(3)}, ${lng.toFixed(3)})`, lat, lng, riskScore: NaN, riskLevel: 'UNAVAILABLE' });
     } finally {
       setIsAssessingCity(false);
     }
@@ -182,24 +193,23 @@ export default function ClimateRiskModule() {
     setIsSearchingCity(true);
     setCitySearchError('');
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`,
-        { headers: { Accept: 'application/json' } },
-      );
-      if (!response.ok) throw new Error('City search request failed');
-      const matches = await response.json();
-      if (!matches.length) {
+      const response = await fetch(`${API_BASE_URL}/city-search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+      });
+      if (response.status === 404) {
         setCitySearchError('City not found. Try a fuller name, for example “Delhi, India”.');
         return;
       }
-
-      const match = matches[0];
-      const lat = Number(match.lat);
-      const lng = Number(match.lon);
+      if (!response.ok) throw new Error('City search request failed');
+      const match = await response.json();
+      const lat = Number(match.latitude);
+      const lng = Number(match.longitude);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) throw new Error('Invalid city coordinates');
 
       globeEl.current?.pointOfView({ lat, lng, altitude: 1.45 }, 1200);
-      setCityQuery(match.display_name);
+      setCityQuery(match.name);
       await assessCityRisk({ lat, lng });
     } catch {
       setCitySearchError('Could not look up that city. Check your internet connection and try again.');
@@ -220,6 +230,13 @@ export default function ClimateRiskModule() {
     if (score > 70) return 'rgba(34, 197, 94, 0.80)'; // Red High
     if (score >= 40) return 'rgba(74, 222, 128, 0.70)'; // Orange Med
     return 'rgba(134, 239, 172, 0.60)'; // Yellow Low
+  };
+
+  const getRiskColor = (riskScore) => {
+    if (!Number.isFinite(riskScore)) return '#94a3b8';
+    if (riskScore > 70) return '#ef4444';
+    if (riskScore >= 40) return '#facc15';
+    return '#22c55e';
   };
 
   // Format radar data for Recharts
@@ -291,6 +308,12 @@ export default function ClimateRiskModule() {
 
       {citySearchError && <div className="absolute top-[5.75rem] right-5 z-[120] rounded border border-red-900 bg-red-950/95 px-3 py-2 text-xs text-red-200">{citySearchError}</div>}
 
+      <div className="absolute left-5 top-[5.75rem] z-[120] rounded border border-slate-700 bg-slate-950/90 px-3 py-2 text-[10px] text-slate-200 flex items-center gap-3 pointer-events-none">
+        <span className="flex items-center gap-1"><i className="w-2.5 h-2.5 rounded-full bg-red-500" />HIGH (&gt;70)</span>
+        <span className="flex items-center gap-1"><i className="w-2.5 h-2.5 rounded-full bg-yellow-400" />MODERATE (40–70)</span>
+        <span className="flex items-center gap-1"><i className="w-2.5 h-2.5 rounded-full bg-green-500" />LOW (&lt;40)</span>
+      </div>
+
             {/* 3D Globe Canvas */}
       <div className="w-full h-full pt-12 relative">
         {/* Stylish Website Title Overlay Floating Over the Globe */}
@@ -327,6 +350,20 @@ export default function ClimateRiskModule() {
           `}
           onPolygonClick={handlePolygonClick}
           onGlobeClick={assessCityRisk}
+          pointsData={cityPin ? [cityPin] : []}
+          pointLat="lat"
+          pointLng="lng"
+          pointColor={(point) => getRiskColor(point.riskScore)}
+          pointAltitude={0.08}
+          pointRadius={0.45}
+          pointLabel={(point) => `<div style="background:#0f172a;color:#fff;border:1px solid ${getRiskColor(point.riskScore)};padding:6px 10px;border-radius:6px;font-family:monospace"><strong>${point.name}</strong><br/>Historical risk: ${point.riskLevel}${Number.isFinite(point.riskScore) ? ` (${point.riskScore}/100)` : ''}</div>`}
+          labelsData={cityPin ? [cityPin] : []}
+          labelLat="lat"
+          labelLng="lng"
+          labelText="name"
+          labelColor={(label) => getRiskColor(label.riskScore)}
+          labelSize={1.1}
+          labelDotRadius={0.35}
         />
       </div>
 

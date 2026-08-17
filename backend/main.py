@@ -3,6 +3,8 @@ import uuid
 import json
 import shutil
 import re
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 from datetime import datetime
 from typing import Optional, List
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, BackgroundTasks, HTTPException
@@ -61,6 +63,37 @@ def _parse_gemini_json(text: str) -> dict:
     """Accept JSON responses even when a model wraps them in a Markdown fence."""
     cleaned = re.sub(r"^```(?:json)?\\s*|\\s*```$", "", text.strip(), flags=re.IGNORECASE)
     return json.loads(cleaned)
+
+
+@app.post("/city-search")
+def city_search(payload: dict):
+    """Resolve a human-readable city name to coordinates for the globe."""
+    query = str(payload.get("query", "")).strip()
+    if not query:
+        raise HTTPException(status_code=422, detail="A city name is required")
+
+    try:
+        params = urlencode({"format": "jsonv2", "limit": 1, "q": query})
+        request = Request(
+            f"https://nominatim.openstreetmap.org/search?{params}",
+            headers={"User-Agent": "DisasterRiskCommandCenter/1.0 (local development)"},
+        )
+        with urlopen(request, timeout=10) as response:
+            matches = json.loads(response.read().decode("utf-8"))
+        if not matches:
+            raise HTTPException(status_code=404, detail="City not found")
+
+        match = matches[0]
+        return {
+            "name": match["display_name"],
+            "latitude": float(match["lat"]),
+            "longitude": float(match["lon"]),
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"[!] City search failed: {exc}")
+        raise HTTPException(status_code=503, detail="City search is temporarily unavailable")
 
 
 # ─── 1. Health Endpoint ───────────────────────────────────────────────────────
