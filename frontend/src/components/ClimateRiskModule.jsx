@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Globe from 'react-globe.gl';
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
-import { Globe as GlobeIcon, ShieldAlert, History, TrendingUp, Layers, X, Info, Flame, CloudRain, Zap, Wind, MapPin, LoaderCircle } from 'lucide-react';
+import { Globe as GlobeIcon, ShieldAlert, History, TrendingUp, Layers, X, Info, Flame, CloudRain, Zap, Wind, MapPin, LoaderCircle, Search } from 'lucide-react';
 
 // Fallback GeoJSON boundaries for India & World when offline
 const INDIA_GEOJSON_URL = "https://raw.githubusercontent.com/subhash-chandra/india-states-geojson/master/india_states.geojson";
@@ -91,6 +91,9 @@ export default function ClimateRiskModule() {
   const [loadingGeoJson, setLoadingGeoJson] = useState(true);
   const [cityAssessment, setCityAssessment] = useState(null);
   const [isAssessingCity, setIsAssessingCity] = useState(false);
+  const [cityQuery, setCityQuery] = useState('');
+  const [isSearchingCity, setIsSearchingCity] = useState(false);
+  const [citySearchError, setCitySearchError] = useState('');
 
   // Fetch GeoJSON polygons based on active layer
   useEffect(() => {
@@ -171,6 +174,40 @@ export default function ClimateRiskModule() {
     }
   };
 
+  const handleCitySearch = async (event) => {
+    event.preventDefault();
+    const query = cityQuery.trim();
+    if (!query) return;
+
+    setIsSearchingCity(true);
+    setCitySearchError('');
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`,
+        { headers: { Accept: 'application/json' } },
+      );
+      if (!response.ok) throw new Error('City search request failed');
+      const matches = await response.json();
+      if (!matches.length) {
+        setCitySearchError('City not found. Try a fuller name, for example “Delhi, India”.');
+        return;
+      }
+
+      const match = matches[0];
+      const lat = Number(match.lat);
+      const lng = Number(match.lon);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) throw new Error('Invalid city coordinates');
+
+      globeEl.current?.pointOfView({ lat, lng, altitude: 1.45 }, 1200);
+      setCityQuery(match.display_name);
+      await assessCityRisk({ lat, lng });
+    } catch {
+      setCitySearchError('Could not look up that city. Check your internet connection and try again.');
+    } finally {
+      setIsSearchingCity(false);
+    }
+  };
+
   // Get color by risk score
   const getPolygonColor = (polygon) => {
     const properties = polygon.properties || {};
@@ -234,7 +271,25 @@ export default function ClimateRiskModule() {
             <span>GLOBAL (COUNTRIES)</span>
           </button>
         </div>
+
+        <form onSubmit={handleCitySearch} className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-cyan-300" />
+            <input
+              value={cityQuery}
+              onChange={(event) => setCityQuery(event.target.value)}
+              placeholder="Search city, e.g. Delhi"
+              className="w-52 bg-slate-900 border border-slate-700 rounded px-8 py-2 text-xs text-white placeholder:text-slate-500 outline-none focus:border-cyan-400"
+              aria-label="Search a city on the globe"
+            />
+          </div>
+          <button type="submit" disabled={isSearchingCity} className="px-3 py-2 rounded bg-cyan-700 hover:bg-cyan-600 text-white text-xs font-bold disabled:opacity-60">
+            {isSearchingCity ? 'LOCATING…' : 'ASSESS'}
+          </button>
+        </form>
       </div>
+
+      {citySearchError && <div className="absolute top-[5.75rem] right-5 z-[120] rounded border border-red-900 bg-red-950/95 px-3 py-2 text-xs text-red-200">{citySearchError}</div>}
 
             {/* 3D Globe Canvas */}
       <div className="w-full h-full pt-12 relative">
