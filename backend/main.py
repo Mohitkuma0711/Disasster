@@ -13,10 +13,6 @@ from fastapi.staticfiles import StaticFiles
 
 from video_processor import VideoThreatProcessor, datetime_to_iso
 
-try:
-    import google.generativeai as genai
-except ImportError:
-    genai = None
 
 # Initialize FastAPI application
 app = FastAPI(title="Disaster Victim Detection & Video Threat Intelligence API")
@@ -40,8 +36,17 @@ VIDEO_JOBS_DB = {}
 VERIFIED_THREATS_DB = {}
 REJECTED_CANDIDATES_DB = {}
 
-# Initialize Processor Instance
-processor = VideoThreatProcessor(model_name="yolov8n.pt", sample_fps=2.0)
+# Create the heavyweight video processor only when a video is actually uploaded.
+# This keeps lightweight routes (health, city search, climate assessment) available
+# even when the YOLO weights are not present yet.
+processor = None
+
+
+def get_video_processor() -> VideoThreatProcessor:
+    global processor
+    if processor is None:
+        processor = VideoThreatProcessor(model_name="yolov8n.pt", sample_fps=2.0)
+    return processor
 
 
 def _local_climate_assessment(latitude: float, longitude: float) -> dict:
@@ -116,7 +121,7 @@ def climate_risk_assessment(location: dict):
         raise HTTPException(status_code=422, detail="Coordinates are outside valid geographic bounds")
 
     gemini_key = os.getenv("GEMINI_API_KEY")
-    if not genai or not gemini_key or gemini_key.startswith("AIzaSy_your_actual"):
+    if not gemini_key or gemini_key.startswith("AIzaSy_your_actual"):
         return _local_climate_assessment(latitude, longitude)
 
     prompt = f"""
@@ -139,13 +144,24 @@ Use an integer risk_score from 0 to 100, and include 2-4 top_hazards and 2-4 pre
 """
 
     try:
-        genai.configure(api_key=gemini_key)
-        model = genai.GenerativeModel("gemini-2.0-flash")
-        response = model.generate_content(
-            prompt,
-            generation_config={"temperature": 0.2, "response_mime_type": "application/json"},
+        request_body = json.dumps({
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "temperature": 0.2,
+                "responseMimeType": "application/json",
+            },
+        }).encode("utf-8")
+        request = Request(
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={gemini_key}",
+            data=request_body,
+            headers={"Content-Type": "application/json"},
+            method="POST",
         )
-        assessment = _parse_gemini_json(response.text)
+        # Historical assessments can take longer than simple Gemini prompts.
+        with urlopen(request, timeout=90) as response:
+            response_body = json.loads(response.read().decode("utf-8"))
+        response_text = response_body["candidates"][0]["content"]["parts"][0]["text"]
+        assessment = _parse_gemini_json(response_text)
         assessment["source"] = assessment.get("source") or "Gemini historical-context assessment"
         assessment["disclaimer"] = assessment.get("disclaimer") or "Historical-context estimate only; not a live warning or official forecast."
         return assessment
@@ -177,7 +193,7 @@ def run_video_processing_task(video_id: str, video_path: str, output_dir: str):
         VIDEO_JOBS_DB[video_id]["status"] = "processing"
         
         # Process Video with 2-stage pipeline
-        result = processor.process_video_file(
+        result = get_video_processor().process_video_file(
             video_path=video_path,
             output_dir=output_dir,
             video_id=video_id
