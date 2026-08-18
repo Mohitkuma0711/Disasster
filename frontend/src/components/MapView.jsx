@@ -47,7 +47,7 @@ export default function MapView({ victims = [], onSelectVictim }) {
   const [center] = useState([28.6139, 77.2090]); // Default Delhi coordinates or center of detections
 
   return (
-    <div className="relative w-full h-[520px] rounded-xl overflow-hidden border border-amber-900/40 bg-slate-950 shadow-2xl shadow-black/90">
+    <div className="relative w-full h-[calc(100vh-180px)] min-h-[540px] rounded-2xl overflow-hidden border border-amber-900/40 bg-slate-950 shadow-2xl shadow-black/90">
       {/* Evidence Board Top Bar */}
       <div className="absolute top-0 left-0 right-0 z-[1000] bg-slate-950/90 backdrop-blur border-b border-amber-900/40 px-4 py-2.5 flex items-center justify-between">
         <div className="flex items-center space-x-2">

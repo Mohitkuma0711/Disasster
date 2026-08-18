@@ -7,15 +7,18 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from datetime import datetime
 from typing import Optional, List
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, BackgroundTasks, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, BackgroundTasks, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from api.photo_routes import router as photo_router
+from core.config import APP_TITLE, UPLOADS_DIR
 from video_processor import VideoThreatProcessor, datetime_to_iso
 
 
 # Initialize FastAPI application
-app = FastAPI(title="Disaster Victim Detection & Video Threat Intelligence API")
+app = FastAPI(title=APP_TITLE)
+app.include_router(photo_router)
 
 # Configure CORS
 app.add_middleware(
@@ -27,9 +30,7 @@ app.add_middleware(
 )
 
 # Create upload directory and mount static server for video screenshots
-UPLOADS_DIR = os.path.join(os.path.dirname(__file__), "uploads")
-os.makedirs(UPLOADS_DIR, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
+app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 
 # In-memory storage for jobs & threats (backed up by Firestore when client connected)
 VIDEO_JOBS_DB = {}
@@ -40,7 +41,6 @@ REJECTED_CANDIDATES_DB = {}
 # This keeps lightweight routes (health, city search, climate assessment) available
 # even when the YOLO weights are not present yet.
 processor = None
-
 
 def get_video_processor() -> VideoThreatProcessor:
     global processor

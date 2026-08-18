@@ -17,12 +17,20 @@ load_dotenv()
 from detection import PersonDetector
 from tracking_state import InactivityTracker
 
-# Try importing Google Generative AI SDK for Gemini vision verification
+# Try importing Google Generative AI SDK for Gemini vision verification.
+# The project may have either the legacy or modern SDK installed depending on the environment.
 try:
     import google.generativeai as genai
     HAS_GEMINI_LIB = True
+    GEMINI_SDK = "legacy"
 except ImportError:
-    HAS_GEMINI_LIB = False
+    try:
+        from google import genai as genai
+        HAS_GEMINI_LIB = True
+        GEMINI_SDK = "modern"
+    except ImportError:
+        HAS_GEMINI_LIB = False
+        GEMINI_SDK = None
 
 
 class VideoThreatProcessor:
@@ -44,11 +52,32 @@ class VideoThreatProcessor:
         # Initialize Gemini API if GEMINI_API_KEY is present
         self.gemini_key = os.getenv("GEMINI_API_KEY")
         self.gemini_model = None
+        self.gemini_client = None
+        self.gemini_sdk = GEMINI_SDK
 
         if HAS_GEMINI_LIB and self.gemini_key and not self.gemini_key.startswith("AIzaSy_your_actual"):
             try:
-                genai.configure(api_key=self.gemini_key)
-                self.gemini_model = genai.GenerativeModel("gemini-2.0-flash")
+                if self.gemini_sdk == "legacy":
+                    genai.configure(api_key=self.gemini_key)
+                    self.gemini_model = genai.GenerativeModel("gemini-2.0-flash")
+                else:
+                    # Avoid using SOCKS proxy env values that can break httpx on local setups.
+                    proxy_keys = ["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"]
+                    saved_proxy_values = {key: os.environ.get(key) for key in proxy_keys}
+                    for key in proxy_keys:
+                        value = os.environ.get(key, "")
+                        if value and value.lower().startswith("socks"):
+                            os.environ.pop(key, None)
+
+                    try:
+                        self.gemini_client = genai.Client(api_key=self.gemini_key)
+                    finally:
+                        for key, value in saved_proxy_values.items():
+                            if value is None:
+                                os.environ.pop(key, None)
+                            else:
+                                os.environ[key] = value
+
                 print("[+] Gemini Client initialized with 'gemini-2.0-flash' Vision verification.")
             except Exception as e:
                 print(f"[!] Error configuring Gemini API: {e}")
@@ -261,36 +290,56 @@ class VideoThreatProcessor:
             "Respond ONLY in JSON: {\"verdict\": \"confirmed\" or \"rejected\", \"reasoning\": \"one sentence explanation\"}"
         )
 
-        if self.gemini_model:
-            # Convert BGR frame to PIL Image (RGB)
+        if self.gemini_model or self.gemini_client:
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             pil_img = Image.fromarray(rgb_frame)
 
             max_retries = 3
             for attempt in range(max_retries):
                 try:
-                    response = self.gemini_model.generate_content([prompt, pil_img])
-                    reply_text = response.text.strip()
+                    if self.gemini_sdk == "legacy" and self.gemini_model:
+                        response = self.gemini_model.generate_content([prompt, pil_img])
+                        reply_text = response.text.strip()
+                    elif self.gemini_sdk == "modern" and self.gemini_client:
+                        image_bytes = cv2.imencode(".jpg", frame)[1].tobytes()
+                        response = self.gemini_client.models.generate_content(
+                            model="gemini-2.0-flash",
+                            contents=[
+                                prompt,
+                                {
+                                    "inline_data": {
+                                        "mime_type": "image/jpeg",
+                                        "data": image_bytes,
+                                    }
+                                },
+                            ],
+                        )
+                        reply_text = getattr(response, "text", None)
+                        if reply_text is None and hasattr(response, "candidates") and response.candidates:
+                            candidate = response.candidates[0]
+                            content = getattr(candidate, "content", None)
+                            if content and hasattr(content, "parts"):
+                                reply_text = "".join(getattr(part, "text", "") or "" for part in content.parts)
+                        if reply_text is None:
+                            reply_text = str(response)
+                    else:
+                        break
 
-                    # Strip markdown code fences if present (```json ... ```)
                     cleaned_json_str = re.sub(r"^```(?:json)?\s*|\s*```$", "", reply_text, flags=re.MULTILINE).strip()
 
                     try:
                         data = json.loads(cleaned_json_str)
                         verdict = str(data.get("verdict", "")).strip().lower()
                         reasoning = str(data.get("reasoning", "")).strip()
-
                         is_confirmed = verdict == "confirmed"
                         return is_confirmed, f"[Gemini 2.0 Flash] {reasoning}"
                     except json.JSONDecodeError:
-                        # Fallback parsing if non-strict JSON returned
                         is_confirmed = "confirmed" in reply_text.lower()
                         return is_confirmed, f"[Gemini 2.0 Flash] {reply_text}"
 
                 except Exception as e:
                     err_str = str(e)
                     if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "Quota" in err_str:
-                        # Rate limit retry with exponential backoff
                         wait_sec = 2.0 * (attempt + 1)
                         print(f"[!] Gemini Rate Limit hit. Retrying in {wait_sec}s (attempt {attempt+1}/{max_retries})...")
                         time.sleep(wait_sec)
@@ -298,7 +347,6 @@ class VideoThreatProcessor:
                         print(f"[!] Gemini API Error: {e}")
                         break
 
-        # Heuristic fallback if GEMINI_API_KEY is not set or API call fails
         if conf >= 0.35:
             reasoning_map = {
                 "Immobile / Possible Unconscious": "Motion analysis confirms person in stationary position over consecutive frames.",
@@ -307,8 +355,7 @@ class VideoThreatProcessor:
             }
             reason = reasoning_map.get(threat_type, f"Confirmed candidate for {threat_type}.")
             return True, f"[VERIFIED BY VISION-HEURISTIC] {reason} (Set GEMINI_API_KEY in backend/.env for Gemini 2.0 Flash)"
-        else:
-            return False, f"[REJECTED] Candidate confidence too low ({conf:.2f})."
+        return False, f"[REJECTED] Candidate confidence too low ({conf:.2f})."
 
     def _group_candidate_events(self, raw_flags: List[Dict]) -> List[Dict]:
         if not raw_flags:

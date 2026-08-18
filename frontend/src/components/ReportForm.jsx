@@ -8,6 +8,55 @@ export default function ReportForm({ onReportSubmitted }) {
   const [photo, setPhoto] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
+  const [photoAnalyzing, setPhotoAnalyzing] = useState(false);
+
+  const handlePhotoUpload = async (selectedFile) => {
+    if (!selectedFile) {
+      setPhoto(null);
+      return;
+    }
+
+    setPhoto(selectedFile);
+    setPhotoAnalyzing(true);
+    setStatusMessage({ type: 'info', text: 'Extracting GPS data from photo metadata…' });
+
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      const response = await fetch('http://localhost:8000/location-from-photo', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result?.detail || 'Unable to read photo location metadata.');
+      }
+
+      if (result.gps_found && result.location) {
+        setLat(Number(result.location.latitude).toFixed(6));
+        setLng(Number(result.location.longitude).toFixed(6));
+        setStatusMessage({
+          type: 'success',
+          text: `Location from photo detected: ${result.location.latitude}, ${result.location.longitude}`,
+        });
+      } else {
+        setStatusMessage({
+          type: 'error',
+          text: 'No GPS coordinates found in this photo. You can still enter coordinates manually.',
+        });
+      }
+    } catch (error) {
+      setStatusMessage({
+        type: 'error',
+        text: error.message || 'Photo location analysis failed.',
+      });
+    } finally {
+      setPhotoAnalyzing(false);
+    }
+  };
 
   // Get user's current GPS position
   const handleGetLocation = () => {
@@ -121,17 +170,20 @@ export default function ReportForm({ onReportSubmitted }) {
 
         {/* Photo Upload */}
         <div>
-          <label className="block text-blue-300 mb-1">ATTACHMENT / EVIDENCE PHOTO</label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-blue-300">ATTACHMENT / EVIDENCE PHOTO</label>
+            <span className="text-[10px] text-amber-300 uppercase tracking-wide">Location from photo</span>
+          </div>
           <div className="relative border border-dashed border-slate-700 rounded-lg p-3 text-center bg-slate-900/50 hover:border-amber-500/50 transition">
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => setPhoto(e.target.files[0] || null)}
+              onChange={(e) => handlePhotoUpload(e.target.files[0] || null)}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
             <div className="flex items-center justify-center space-x-2 text-slate-400">
               <Upload className="w-4 h-4 text-blue-400" />
-              <span>{photo ? photo.name : 'Click or drop aerial/ground image file here'}</span>
+              <span>{photo ? photo.name : photoAnalyzing ? 'Analyzing photo metadata…' : 'Click or drop aerial/ground image file here'}</span>
             </div>
           </div>
         </div>

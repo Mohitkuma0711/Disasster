@@ -6,9 +6,17 @@ import ReportForm from './components/ReportForm';
 import AnalyticsCharts from './components/AnalyticsCharts';
 import ClimateRiskModule from './components/ClimateRiskModule';
 import VideoThreatAnalysis from './components/VideoThreatAnalysis';
-import { Shield, Radio, Cpu, Database, MapPin, Globe as GlobeIcon, Film } from 'lucide-react';
+import PhotoLocationPage from './components/PhotoLocationPage';
+import { Shield, Radio, Cpu, Database, MapPin, Globe as GlobeIcon, Film, Camera, Activity, Radar, AlertTriangle, Zap } from 'lucide-react';
 
 const LOCAL_VICTIMS_KEY = 'disaster-rescue-project:victims';
+
+const missionPills = [
+  { label: 'Live telemetry', value: '12 nodes online', icon: Radar },
+  { label: 'Threat signal', value: 'Elevated', icon: AlertTriangle },
+  { label: 'Response tempo', value: '92% readiness', icon: Activity },
+  { label: 'Grid uptime', value: '99.4%', icon: Zap },
+];
 
 const INITIAL_DEMO_VICTIMS = [
   {
@@ -83,7 +91,8 @@ export default function App() {
     }
   });
   const [selectedVictim, setSelectedVictim] = useState(null);
-  const [currentModule, setCurrentModule] = useState('victim-triage'); // 'victim-triage', 'climate-risk', or 'video-analysis'
+  const [currentModule, setCurrentModule] = useState('victim-triage'); // 'victim-triage', 'photo-location', 'climate-risk', or 'video-analysis'
+  const [currentUtcTime, setCurrentUtcTime] = useState(() => new Date());
 
   useEffect(() => {
     try {
@@ -92,6 +101,14 @@ export default function App() {
       // The queue continues to work for the current session if storage is unavailable.
     }
   }, [victims]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentUtcTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   const handleReportSubmitted = (newVictim) => {
     setVictims(prev => [newVictim, ...prev]);
@@ -111,79 +128,123 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070a10] text-white font-mono pb-12">
-      {/* Top Tactical Command Header */}
-      <header className="bg-slate-950/95 border-b border-amber-900/50 sticky top-0 z-[2000] backdrop-blur px-4 py-3 shadow-2xl">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
-          
-          {/* Title & Classification Banner */}
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-amber-950/80 border border-amber-600/50 rounded-lg shadow-lg">
-              <Shield className="w-6 h-6 text-amber-400" />
+    <div className="app-shell min-h-screen text-white pb-12">
+      <header className="topbar">
+        <div className="max-w-7xl mx-auto flex flex-col xl:flex-row xl:items-center justify-between gap-4 px-4 py-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="badge-mark" aria-label="Status badge">
+              <Shield className="w-5 h-5" />
             </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h1 className="text-xl font-bold font-typewriter tracking-wider text-white uppercase">
-                  DISASTER VICTIM DETECTION & COMMAND INTELLIGENCE
-                </h1>
-                <span className="px-2 py-0.5 text-[10px] font-bold bg-red-950 text-red-400 border border-red-800/80 rounded uppercase">
-                  SIH // EVIDENTIAL COMMAND
-                </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="hero-title">Disaster Victim Detection</h1>
+                <span className="status-pill">SIH // EVIDENTIAL COMMAND</span>
               </div>
-              <p className="text-xs text-slate-400">
-                Incident Command Center, Automated Victim Triage, 3D Climate Risk & Video Threat Analysis
+              <p className="hero-subtitle">
+                Incident command center for triage, photo intelligence, climate risk, and rapid field assessment.
               </p>
             </div>
           </div>
 
-          {/* Module Navigation Tabs */}
-          <div className="flex items-center space-x-2 bg-slate-900/90 p-1.5 rounded-lg border border-slate-800">
+          <div className="nav-panel">
             <button
               onClick={() => setCurrentModule('victim-triage')}
-              className={`px-3.5 py-1.5 rounded text-xs font-mono font-bold transition flex items-center space-x-2 ${
-                currentModule === 'victim-triage'
-                  ? 'bg-amber-900/60 text-white border border-amber-600/60 shadow-lg'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
+              className={`nav-tab ${currentModule === 'victim-triage' ? 'is-active' : ''}`}
             >
-              <MapPin className="w-4 h-4 text-amber-400" />
-              <span>VICTIM TRIAGE MAP</span>
+              <MapPin className="w-4 h-4" />
+              <span>Victim Triage</span>
+            </button>
+
+            <button
+              onClick={() => setCurrentModule('photo-location')}
+              className={`nav-tab ${currentModule === 'photo-location' ? 'is-active' : ''}`}
+            >
+              <Camera className="w-4 h-4" />
+              <span>Location from Photo</span>
             </button>
 
             <button
               onClick={() => setCurrentModule('video-analysis')}
-              className={`px-3.5 py-1.5 rounded text-xs font-mono font-bold transition flex items-center space-x-2 ${
-                currentModule === 'video-analysis'
-                  ? 'bg-amber-900/60 text-white border border-amber-600/60 shadow-lg'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
+              className={`nav-tab ${currentModule === 'video-analysis' ? 'is-active' : ''}`}
             >
-              <Film className="w-4 h-4 text-amber-500" />
-              <span>VIDEO THREAT ANALYSIS</span>
+              <Film className="w-4 h-4" />
+              <span>Video Threat</span>
             </button>
 
             <button
               onClick={() => setCurrentModule('climate-risk')}
-              className={`px-3.5 py-1.5 rounded text-xs font-mono font-bold transition flex items-center space-x-2 ${
-                currentModule === 'climate-risk'
-                  ? 'bg-amber-900/60 text-white border border-amber-600/60 shadow-lg'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
+              className={`nav-tab ${currentModule === 'climate-risk' ? 'is-active' : ''}`}
             >
-              <GlobeIcon className="w-4 h-4 text-cyan-400" />
-              <span>CLIMATE RISK GLOBE</span>
+              <GlobeIcon className="w-4 h-4" />
+              <span>Climate Risk</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 mt-6 space-y-6">
-        
-        {/* Module 1: Victim Triage & Detection */}
+      <main className="max-w-7xl mx-auto px-4 mt-8 space-y-6">
         {currentModule === 'victim-triage' && (
           <>
-            {/* Top Row: Map & Report Form */}
+            <section className="hero-panel glass-panel">
+              <div className="hero-copy">
+                <div className="eyebrow">Mission overview</div>
+                <h2>Field intelligence engine</h2>
+                <p>
+                  Real-time victim detection, field reporting, and priority triage for damaged areas, flood zones, and emergency response corridors.
+                </p>
+              </div>
+
+              <div className="mission-strip">
+                {missionPills.map(({ label, value, icon: Icon }) => (
+                  <div key={label} className="mission-pill">
+                    <div className="pill-icon"><Icon className="w-4 h-4" /></div>
+                    <div>
+                      <span>{label}</span>
+                      <strong>{value}</strong>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="overview-grid">
+              <div className="glass-panel overview-panel overview-panel-large">
+                <div className="eyebrow">Live analytics</div>
+                <div className="stat-grid">
+                  <div className="stat-card">
+                    <span className="stat-label">Active alerts</span>
+                    <strong>{victims.filter(v => v.status !== 'rescued').length}</strong>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">Priority queue</span>
+                    <strong>{Math.max(...victims.map(v => Number(v.priority_score || 0)), 0).toFixed(1)}</strong>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">Confidence</span>
+                    <strong>{(victims.reduce((sum, v) => sum + (v.confidence || 0), 0) / Math.max(victims.length, 1)).toFixed(2)}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="glass-panel overview-panel">
+                <div className="eyebrow">Command pulse</div>
+                <div className="mini-list">
+                  <div>
+                    <span className="mini-label">Triage state</span>
+                    <strong>Operational</strong>
+                  </div>
+                  <div>
+                    <span className="mini-label">Response grid</span>
+                    <strong>Sector 7</strong>
+                  </div>
+                  <div>
+                    <span className="mini-label">Last sync</span>
+                    <strong>{currentUtcTime.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false })} IST</strong>
+                  </div>
+                </div>
+              </div>
+            </section>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <MapView victims={victims} onSelectVictim={setSelectedVictim} />
@@ -193,10 +254,8 @@ export default function App() {
               </div>
             </div>
 
-            {/* Analytics Charts */}
             <AnalyticsCharts victims={victims} />
 
-            {/* Priority Queue Log Table */}
             <PriorityQueue
               victims={victims}
               onVictimSelect={setSelectedVictim}
@@ -205,15 +264,12 @@ export default function App() {
           </>
         )}
 
-        {/* Module 2: Video Threat Analysis */}
-        {currentModule === 'video-analysis' && (
-          <VideoThreatAnalysis />
-        )}
+        {currentModule === 'photo-location' && <PhotoLocationPage />}
 
-        {/* Module 3: Climate Risk Intelligence 3D Globe */}
-        {currentModule === 'climate-risk' && (
-          <ClimateRiskModule />
-        )}
+        {currentModule === 'video-analysis' && <VideoThreatAnalysis />}
+
+        {currentModule === 'climate-risk' && <ClimateRiskModule />}
+
         <ChatbotWidget victims={victims} />
       </main>
     </div>
