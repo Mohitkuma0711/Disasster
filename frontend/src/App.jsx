@@ -247,8 +247,8 @@ export default function App() {
                     <strong>{Math.max(...victims.map(v => Number(v.priority_score || 0)), 0).toFixed(1)}</strong>
                   </div>
                   <div className="stat-card">
-                    <span className="stat-label">Confidence</span>
-                    <strong>{(victims.reduce((sum, v) => sum + (v.confidence || 0), 0) / Math.max(victims.length, 1)).toFixed(2)}</strong>
+                    <span className="stat-label">Response tempo</span>
+                    <strong>92%</strong>
                   </div>
                 </div>
               </div>

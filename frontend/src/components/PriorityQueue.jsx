@@ -103,12 +103,6 @@ export default function PriorityQueue({ victims, onVictimSelect, onVictimRescued
                 </div>
               </th>
               <th className="py-3 px-4">LOCATION COORDS</th>
-              <th className="py-3 px-4 cursor-pointer hover:text-white" onClick={() => toggleSort('confidence')}>
-                <div className="flex items-center space-x-1">
-                  <span>CONFIDENCE</span>
-                  <ArrowUpDown className="w-3.5 h-3.5 opacity-60" />
-                </div>
-              </th>
               <th className="py-3 px-4">INACTIVITY</th>
               <th className="py-3 px-4">STATUS</th>
               <th className="py-3 px-4 text-right">ACTION</th>
@@ -159,19 +153,6 @@ export default function PriorityQueue({ victims, onVictimSelect, onVictimRescued
                         {Number(v.lat || (v.coordinates && v.coordinates[0]) || 0).toFixed(4)},{' '}
                         {Number(v.lng || (v.coordinates && v.coordinates[1]) || 0).toFixed(4)}
                       </span>
-                    </td>
-
-                    {/* Confidence */}
-                    <td className="py-3 px-4 text-slate-300">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-16 bg-slate-800 h-2 rounded-full overflow-hidden">
-                          <div
-                            className="bg-amber-400 h-full rounded-full"
-                            style={{ width: `${Math.round((v.confidence || 0.85) * 100)}%` }}
-                          />
-                        </div>
-                        <span className="text-[11px]">{Math.round((v.confidence || 0.85) * 100)}%</span>
-                      </div>
                     </td>
 
                     {/* Inactivity Status */}

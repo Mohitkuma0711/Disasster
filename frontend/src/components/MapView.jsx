@@ -132,7 +132,6 @@ export default function MapView({ victims = [], onSelectVictim }) {
 
                     <div className="text-xs space-y-1 text-slate-300 font-mono">
                       <div><strong className="text-blue-300">Lat/Lng:</strong> {lat.toFixed(4)}, {lng.toFixed(4)}</div>
-                      <div><strong className="text-blue-300">Confidence:</strong> {Math.round((victim.confidence || 0.85) * 100)}%</div>
                       <div><strong className="text-blue-300">Status:</strong> {victim.is_inactive ? 'STATIONARY (IMPACTED)' : 'MOVING'}</div>
                       {victim.description && (
                         <div className="pt-1 text-[11px] italic text-white border-t border-slate-800">
