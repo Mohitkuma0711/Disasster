@@ -43,16 +43,17 @@ const createMarkerIcon = (priorityScore, isRescued) => {
   });
 };
 
-export default function MapView({ victims = [], onSelectVictim }) {
+export default function MapView({ victims = [], onSelectVictim, theme = 'day' }) {
   const [center] = useState([28.6139, 77.2090]); // Default Delhi coordinates or center of detections
+  const mapTileUrl = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 
   return (
-    <div className="relative w-full h-[calc(100vh-180px)] min-h-[540px] rounded-2xl overflow-hidden border border-amber-900/40 bg-slate-950 shadow-2xl shadow-black/90">
+    <div className={`relative w-full h-[calc(100vh-180px)] min-h-[540px] rounded-2xl overflow-hidden border ${theme === 'day' ? 'border-slate-300/60 bg-slate-50' : 'border-amber-900/40 bg-slate-950'} shadow-2xl ${theme === 'day' ? 'shadow-slate-200/50' : 'shadow-black/90'}`}>
       {/* Evidence Board Top Bar */}
-      <div className="absolute top-0 left-0 right-0 z-[1000] bg-slate-950/90 backdrop-blur border-b border-amber-900/40 px-4 py-2.5 flex items-center justify-between">
+      <div className={`absolute top-0 left-0 right-0 z-[1000] ${theme === 'day' ? 'bg-white/85 border-slate-300/70' : 'bg-slate-950/90 border-amber-900/40'} backdrop-blur border-b px-4 py-2.5 flex items-center justify-between`}>
         <div className="flex items-center space-x-2">
-          <Navigation className="w-4 h-4 text-blue-400 animate-pulse" />
-          <span className="font-typewriter text-sm tracking-wider text-white uppercase">
+          <Navigation className={`w-4 h-4 ${theme === 'day' ? 'text-blue-700' : 'text-blue-400'} animate-pulse`} />
+          <span className={`font-typewriter text-sm tracking-wider uppercase ${theme === 'day' ? 'text-slate-900' : 'text-white'}`}>
             GIS Tactical Map & Target Distribution
           </span>
         </div>
@@ -61,19 +62,19 @@ export default function MapView({ victims = [], onSelectVictim }) {
         <div className="flex items-center space-x-4 text-xs font-mono">
           <div className="flex items-center space-x-1.5">
             <span className="w-3 h-3 rounded-full bg-red-600 border border-red-200"></span>
-            <span className="text-red-300">HIGH (&gt;70)</span>
+            <span className={theme === 'day' ? 'text-red-700' : 'text-red-300'}>HIGH (&gt;70)</span>
           </div>
           <div className="flex items-center space-x-1.5">
             <span className="w-3 h-3 rounded-full bg-amber-500 border border-amber-200"></span>
-            <span className="text-white">MED (40-70)</span>
+            <span className={theme === 'day' ? 'text-slate-700' : 'text-white'}>MED (40-70)</span>
           </div>
           <div className="flex items-center space-x-1.5">
             <span className="w-3 h-3 rounded-full bg-yellow-500 border border-yellow-200"></span>
-            <span className="text-yellow-300">LOW (&lt;40)</span>
+            <span className={theme === 'day' ? 'text-yellow-700' : 'text-yellow-300'}>LOW (&lt;40)</span>
           </div>
           <div className="flex items-center space-x-1.5">
             <span className="w-3 h-3 rounded-full bg-emerald-600 border border-emerald-200"></span>
-            <span className="text-emerald-300">RESCUED</span>
+            <span className={theme === 'day' ? 'text-emerald-700' : 'text-emerald-300'}>RESCUED</span>
           </div>
         </div>
       </div>
@@ -87,7 +88,7 @@ export default function MapView({ victims = [], onSelectVictim }) {
       >
         <TileLayer
           attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          url={mapTileUrl}
         />
 
         {victims.map((victim) => {

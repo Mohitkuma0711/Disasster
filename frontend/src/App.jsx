@@ -274,7 +274,7 @@ export default function App() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
-                <MapView victims={victims} onSelectVictim={setSelectedVictim} />
+                <MapView victims={victims} onSelectVictim={setSelectedVictim} theme={theme} />
               </div>
               <div>
                 <ReportForm onReportSubmitted={handleReportSubmitted} />
