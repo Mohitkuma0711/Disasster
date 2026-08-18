@@ -7,7 +7,7 @@ import AnalyticsCharts from './components/AnalyticsCharts';
 import ClimateRiskModule from './components/ClimateRiskModule';
 import VideoThreatAnalysis from './components/VideoThreatAnalysis';
 import PhotoLocationPage from './components/PhotoLocationPage';
-import { Shield, Radio, Cpu, Database, MapPin, Globe as GlobeIcon, Film, Camera, Activity, Radar, AlertTriangle, Zap } from 'lucide-react';
+import { Shield, Radio, Cpu, Database, MapPin, Globe as GlobeIcon, Film, Camera, Activity, Radar, AlertTriangle, Zap, Sun, Moon } from 'lucide-react';
 
 const LOCAL_VICTIMS_KEY = 'disaster-rescue-project:victims';
 
@@ -93,6 +93,14 @@ export default function App() {
   const [selectedVictim, setSelectedVictim] = useState(null);
   const [currentModule, setCurrentModule] = useState('victim-triage'); // 'victim-triage', 'photo-location', 'climate-risk', or 'video-analysis'
   const [currentUtcTime, setCurrentUtcTime] = useState(() => new Date());
+  const [theme, setTheme] = useState(() => {
+    try {
+      const savedTheme = localStorage.getItem('disaster-theme');
+      return savedTheme || 'night';
+    } catch {
+      return 'night';
+    }
+  });
 
   useEffect(() => {
     try {
@@ -101,6 +109,14 @@ export default function App() {
       // The queue continues to work for the current session if storage is unavailable.
     }
   }, [victims]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('disaster-theme', theme);
+    } catch {
+      // Ignore storage issues for non-persistent environments.
+    }
+  }, [theme]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -128,7 +144,7 @@ export default function App() {
   };
 
   return (
-    <div className="app-shell min-h-screen text-white pb-12">
+    <div className={`app-shell min-h-screen pb-12 ${theme === 'day' ? 'theme-day' : 'theme-night'}`}>
       <header className="topbar">
         <div className="max-w-7xl mx-auto flex flex-col xl:flex-row xl:items-center justify-between gap-4 px-4 py-4">
           <div className="flex items-center gap-3 min-w-0">
@@ -137,7 +153,7 @@ export default function App() {
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="hero-title">Disaster Victim Detection</h1>
+                <h1 className="hero-title">Obsidian Command</h1>
                 <span className="status-pill">SIH // EVIDENTIAL COMMAND</span>
               </div>
               <p className="hero-subtitle">
@@ -152,7 +168,7 @@ export default function App() {
               className={`nav-tab ${currentModule === 'victim-triage' ? 'is-active' : ''}`}
             >
               <MapPin className="w-4 h-4" />
-              <span>Victim Triage</span>
+              <span>Overview</span>
             </button>
 
             <button
@@ -160,7 +176,7 @@ export default function App() {
               className={`nav-tab ${currentModule === 'photo-location' ? 'is-active' : ''}`}
             >
               <Camera className="w-4 h-4" />
-              <span>Location from Photo</span>
+              <span>Location</span>
             </button>
 
             <button
@@ -168,7 +184,7 @@ export default function App() {
               className={`nav-tab ${currentModule === 'video-analysis' ? 'is-active' : ''}`}
             >
               <Film className="w-4 h-4" />
-              <span>Video Threat</span>
+              <span>Video</span>
             </button>
 
             <button
@@ -176,7 +192,18 @@ export default function App() {
               className={`nav-tab ${currentModule === 'climate-risk' ? 'is-active' : ''}`}
             >
               <GlobeIcon className="w-4 h-4" />
-              <span>Climate Risk</span>
+              <span>Climate</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setTheme(theme === 'night' ? 'day' : 'night')}
+              className="theme-toggle"
+              aria-label="Toggle day and night mode"
+              title={theme === 'night' ? 'Switch to day mode' : 'Switch to night mode'}
+            >
+              {theme === 'night' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              <span>{theme === 'night' ? 'Day' : 'Night'}</span>
             </button>
           </div>
         </div>
